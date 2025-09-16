@@ -243,7 +243,7 @@ export default function DashboardPage() {
                   <span className="font-medium">Browse Jobs</span>
                 </button>
                 <button
-                  onClick={() => router.push('/dashboard/my-applications')}
+                  onClick={() => router.push('/dashboard/jobs/applications')}
                   className="flex items-center gap-3 p-4 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
                 >
                   <Users className="h-5 w-5" />
@@ -257,7 +257,7 @@ export default function DashboardPage() {
                   <span className="font-medium">Active Contracts</span>
                 </button>
                 <button
-                  onClick={() => router.push('/dashboard/profile')}
+                  onClick={() => router.push('/dashboard/user-profile')}
                   className="flex items-center gap-3 p-4 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
                 >
                   <Star className="h-5 w-5" />
