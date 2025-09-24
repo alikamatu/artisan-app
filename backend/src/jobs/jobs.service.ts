@@ -10,14 +10,21 @@ import {
 import { SupabaseService } from '../supabase/supabase.service';
 import { CreateJobDto } from './dto/create-job.dto';
 import { UpdateJobDto, JobFiltersDto } from './dto/update-job.dto';
-import { Job, JobStatus, JobCurrentStatus } from 'src/entities/job.entity';
+import { Job, JobStatus, JobCurrentStatus, GhanaRegion } from 'src/entities/job.entity';
 import { User } from '../entities/user.entity';
 
 export interface JobResponse {
   id: string;
   title: string;
   description: string;
-  location: string;
+  location: {
+    region: GhanaRegion;
+    city: string;
+    specific_address?: string;
+    latitude?: number;
+    longitude?: number;
+  } | null;
+  category: string; // ADD THIS LINE - missing category field
   budget_min: number;
   budget_max: number;
   required_skills: string[];
@@ -609,12 +616,28 @@ async findAll(filters: JobFiltersDto, currentUserId?: string): Promise<JobListRe
     return validTransitions[currentStatus]?.includes(newStatus) || false;
   }
 
+// Updated formatJobResponse method in jobs.service.ts
+
 private formatJobResponse(job: any, includeDetails: boolean = false): JobResponse {
+  // Parse location from JSON field (since your DB stores it as JSON, not separate columns)
+  let parsedLocation = null;
+  if (job.location) {
+    try {
+      parsedLocation = typeof job.location === 'string' 
+        ? JSON.parse(job.location) 
+        : job.location;
+    } catch (error) {
+      this.logger.warn('Failed to parse job location:', job.location);
+      parsedLocation = null;
+    }
+  }
+
   const response: JobResponse = {
     id: job.id,
     title: job.title,
     description: job.description,
-    location: job.location,
+    location: parsedLocation, // Use parsed location object
+    category: job.category, // ADD THIS LINE - missing category field
     budget_min: parseFloat(job.budget_min),
     budget_max: parseFloat(job.budget_max),
     required_skills: job.required_skills || [],
@@ -634,8 +657,8 @@ private formatJobResponse(job: any, includeDetails: boolean = false): JobRespons
     actual_completion_date: job.actual_completion_date
   };
 
-    // Add client info
-   if (job.client) {
+  // Add client info (existing code)
+  if (job.client) {
     const clientMetadata = job.client.parsedMetadata || {};
     const profile = clientMetadata.profile || {};
     
@@ -645,11 +668,9 @@ private formatJobResponse(job: any, includeDetails: boolean = false): JobRespons
       rating: clientMetadata.profile?.rating || 4.2,
       total_jobs: clientMetadata.stats?.total_jobs_posted || 0,
       verification_status: job.client.is_verified ? 'verified' : 'unverified',
-      // Add profile photo and other profile details
       profile_photo: profile.photo || null,
       first_name: profile.firstName || null,
       last_name: profile.lastName || null,
-      // Construct full name if available
       display_name: profile.firstName && profile.lastName 
         ? `${profile.firstName} ${profile.lastName}`
         : job.client.name
@@ -657,12 +678,12 @@ private formatJobResponse(job: any, includeDetails: boolean = false): JobRespons
 
     if (includeDetails) {
       response.client.email = job.client.email;
-      // Add additional metadata if needed
       response.client.preferences = clientMetadata.preferences || null;
       response.client.payment_method = clientMetadata.payment?.method || null;
     }
   }
-    // Add selected worker info
+
+  // Add selected worker info (existing code)
   if (job.selected_worker) {
     const workerMetadata = job.selected_worker.parsedMetadata || {};
     const workerProfile = workerMetadata.profile || {};
@@ -682,6 +703,6 @@ private formatJobResponse(job: any, includeDetails: boolean = false): JobRespons
     };
   }
 
-    return response;
-  }
+  return response;
+}
 }

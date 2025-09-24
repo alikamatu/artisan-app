@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState } from 'react';
-import { useParams } from 'next/navigation';
 import { useJob } from '@/lib/hooks/useJob';
 import { useApplicationStatus } from '@/lib/hooks/useApplications';
 import JobApplicationModal from './JobApplicationModal';
@@ -25,7 +24,7 @@ import {
 import Link from 'next/link';
 import { ApplicationStatus } from '@/lib/types/applications';
 import { useAuth } from '@/context/AuthContext';
-import { applicationStatusColors, applicationStatusLabels, urgencyColors, urgencyLabels } from '@/constants/jobConstants';
+import { applicationStatusColors, applicationStatusLabels, urgencyColors, urgencyLabels, regionNames, categoryLabels } from '@/constants/jobConstants';
 
 interface JobDetailProps {
   jobId: string;
@@ -36,6 +35,64 @@ export default function JobDetailPage({ jobId }: JobDetailProps) {
   const { user } = useAuth(); // Get current user
   const { applicationStatus, isLoading: checkingStatus, refetch: refetchStatus } = useApplicationStatus(jobId);
   const [showApplicationModal, setShowApplicationModal] = useState(false);
+
+  // Helper function to parse location data
+  const parseLocation = (location: any) => {
+    if (!location) return null;
+    
+    // If location is already an object, return it
+    if (typeof location === 'object' && location.region && location.city) {
+      return location;
+    }
+    
+    // If location is a string (JSON), try to parse it
+    if (typeof location === 'string') {
+      try {
+        return JSON.parse(location);
+      } catch (error) {
+        console.warn('Failed to parse location JSON:', location);
+        return null;
+      }
+    }
+    
+    return null;
+  };
+
+  // Helper function to format region names
+  const formatRegion = (region: string) => {
+    if (!region) return 'N/A';
+    return regionNames[region as keyof typeof regionNames] || 
+           region.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+  };
+
+  // Helper function to format category names
+  const formatCategory = (category: string) => {
+    
+    if (!category) return 'N/A';
+    
+    // Use the simple categoryLabels mapping
+    return categoryLabels[category] || category.split('_').map(word => 
+      word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+  };
+
+  // Helper function to format location display
+  const formatLocationDisplay = (location: any) => {
+    const parsed = parseLocation(location);
+    if (!parsed) return 'Location not specified';
+    
+    const city = parsed.city || '';
+    const region = formatRegion(parsed.region);
+    
+    if (city && region !== 'N/A') {
+      return `${city}, ${region}`;
+    } else if (city) {
+      return city;
+    } else if (region !== 'N/A') {
+      return region;
+    }
+    
+    return 'Location not specified';
+  };
 
   // Helper functions for profile handling
   const getProfilePhoto = (user: any) => {
@@ -296,7 +353,7 @@ export default function JobDetailPage({ jobId }: JobDetailProps) {
                       <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl shadow-sm">
                         <MapPin className="h-4 w-4 text-blue-500" />
                         <span className="text-sm font-medium">
-                          {typeof job.location === 'string' ? job.location : `${job.location.city}, ${job.location.region}`}
+                          {formatLocationDisplay(job.location)}
                         </span>
                       </div>
                       <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl shadow-sm">
@@ -393,8 +450,8 @@ export default function JobDetailPage({ jobId }: JobDetailProps) {
                       </div>
                       <div className="flex justify-between items-center py-2 border-b border-gray-100">
                         <span className="text-gray-600 font-medium">Category:</span>
-                        <span className="font-medium capitalize">
-                          {job.category ? job.category.replace('_', ' ') : 'N/A'}
+                        <span className="font-medium">
+                          {formatCategory(job.category)}
                         </span>
                       </div>
                       {job.estimated_duration && (
@@ -530,7 +587,7 @@ export default function JobDetailPage({ jobId }: JobDetailProps) {
                 </div>
 
                 {/* Additional Details */}
-                {(job.subcategory || (typeof job.location === 'object' && job.location.specific_address)) && (
+                {(job.subcategory || (parseLocation(job.location)?.specific_address)) && (
                   <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
                     <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
                       <span className="w-2 h-5 bg-blue-500 rounded-full"></span>
@@ -543,11 +600,11 @@ export default function JobDetailPage({ jobId }: JobDetailProps) {
                           <span className="font-medium">{job.subcategory}</span>
                         </div>
                       )}
-                      {typeof job.location === 'object' && job.location.specific_address && (
+                      {parseLocation(job.location)?.specific_address && (
                         <div className="flex justify-between items-start py-2">
                           <span className="text-gray-600 font-medium">Address:</span>
                           <span className="font-medium text-right max-w-xs">
-                            {job.location.specific_address}
+                            {parseLocation(job.location)?.specific_address}
                           </span>
                         </div>
                       )}

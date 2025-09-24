@@ -9,15 +9,12 @@ import { JwtStrategy } from './strategies/jwt.strategy';
 import { User } from 'src/entities/user.entity';
 import { MailModule } from 'src/mail/mail.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { AdminVerification } from 'src/entities/admin-verification.entity';
-import { AdminVerificationService } from './admin-verification.service';
-import { AdminController } from './admin.controller';
 import { FileUploadService } from 'src/file/file-upload.service';
 import { SupabaseService } from 'src/supabase/supabase.service';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User, AdminVerification]),
+    TypeOrmModule.forFeature([User]),
     PassportModule,
     ConfigModule.forRoot({ isGlobal: true }),
     JwtModule.registerAsync({
@@ -31,11 +28,10 @@ import { SupabaseService } from 'src/supabase/supabase.service';
     SupabaseModule,
     MailModule,
   ],
-  controllers: [AuthController, AdminController],
+  controllers: [AuthController],
   providers: [
     AuthService,
     JwtStrategy,
-    AdminVerificationService, // <-- move here
     FileUploadService,
     SupabaseService
   ],

@@ -21,11 +21,9 @@ export class JobApplication {
   id: string;
 
   @Column('uuid')
-  @Index()
   job_id: string;
 
   @Column('uuid')
-  @Index()
   worker_id: string;
 
   @Column({ type: 'text' })
@@ -45,7 +43,6 @@ export class JobApplication {
     enum: ApplicationStatus,
     default: ApplicationStatus.PENDING
   })
-  @Index()
   status: ApplicationStatus;
 
   @Column({ type: 'text', nullable: true })
@@ -91,15 +88,3 @@ export class JobApplication {
   @OneToOne(() => Booking, booking => booking.application)
   booking: Booking;
 }
-
-// Add this to your Job entity (job.entity.ts):
-/*
-@OneToMany(() => JobApplication, application => application.job)
-applications: JobApplication[];
-*/
-
-// Add this to your User entity (user.entity.ts):
-/*
-@OneToMany(() => JobApplication, application => application.worker)
-workerApplications: JobApplication[];
-*/

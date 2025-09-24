@@ -17,6 +17,19 @@ export interface JobApplication {
   created_at: string;
   updated_at: string;
   rejection_reason: string;
+  booking_id?: string | null;
+  booking_status?: string | null;
+  booking: {
+    id: string;
+    status: string;
+    completion_date?: string | null;
+    review?: string | null;
+    rated_at?: string | null;
+    rating?: {
+      id: string;
+      overall_rating: number;
+    } | null;
+  } | null;
   
   // Related data
   worker?: {

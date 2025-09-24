@@ -81,11 +81,9 @@ export class Job {
   id: string;
 
   @Column('uuid')
-  @Index()
   client_id: string;
 
   @Column({ type: 'text' })
-  @Index('IDX_job_title_search') // For text search
   title: string;
 
   @Column({ type: 'text' })
@@ -94,14 +92,16 @@ export class Job {
   // Enhanced location structure
   @Column({
     type: 'enum',
-    enum: GhanaRegion
+    enum: GhanaRegion,
+    nullable: true
   })
-  @Index()
   region: GhanaRegion;
 
-  @Column({ type: 'text' })
-  @Index()
+  @Column({ type: 'text', nullable: true })
   city: string;
+
+  @Column({ type: 'text' })
+  location: string; // General location description
 
   @Column({ type: 'text', nullable: true })
   specific_address: string;
@@ -117,18 +117,15 @@ export class Job {
     type: 'enum',
     enum: JobCategory
   })
-  @Index()
   category: JobCategory;
 
   @Column({ type: 'text', nullable: true })
   subcategory: string;
 
   @Column({ type: 'decimal', precision: 10, scale: 2 })
-  @Index()
   budget_min: number;
 
   @Column({ type: 'decimal', precision: 10, scale: 2 })
-  @Index()
   budget_max: number;
 
   @Column({ type: 'text', array: true, nullable: true })
@@ -239,8 +236,8 @@ export class Job {
   @JoinColumn({ name: 'selected_worker_id' })
   selectedWorker: User;
 
-  // @OneToMany(() => JobApplication, proposal => proposal.job)
-  // proposals: JobApplication[];
+@OneToMany(() => Booking, booking => booking.job)
+bookings: Booking[];
 
   @OneToMany(() => JobApplication, application => application.job)
   applications: JobApplication[];

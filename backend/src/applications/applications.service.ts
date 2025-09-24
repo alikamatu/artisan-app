@@ -32,6 +32,7 @@ export interface ApplicationResponse {
   created_at: string;
   updated_at: string;
   rejection_reason?: string;
+  booking_id?: string | null;
   
   // Related data
   worker?: {
@@ -59,6 +60,15 @@ export interface ApplicationResponse {
     status: string;
     client_id: string;
   };
+
+  booking?: {
+    id: string;
+    status: string;
+    completion_date?: string | null;
+    rating?: number | null;
+    review?: string | null;
+    rated_at?: string | null;
+  } | null;
 }
 
 export interface ApplicationListResponse {
@@ -83,92 +93,106 @@ export class ApplicationsService {
   async create(createApplicationDto: CreateApplicationDto, workerId: string): Promise<ApplicationResponse> {
     this.logger.log(`Creating application for worker ${workerId} to job ${createApplicationDto.job_id}`);
 
-    // Validate worker exists and has worker role
-    const { data: worker, error: workerError } = await this.supabase
-      .client
-      .from('user')
-      .select('id, role, is_verified')
-      .eq('id', workerId)
-      .single();
+    try {
+      // Validate worker exists and has worker role
+      const { data: worker, error: workerError } = await this.supabase
+        .client
+        .from('user')
+        .select('id, role, is_verified')
+        .eq('id', workerId)
+        .single();
 
-    if (workerError || !worker) {
-      throw new NotFoundException('Worker not found');
-    }
+      if (workerError || !worker) {
+        this.logger.error('Worker validation failed:', workerError);
+        throw new NotFoundException('Worker not found');
+      }
 
-    if (worker.role !== 'worker') {
-      throw new ForbiddenException('Only workers can apply to jobs');
-    }
+      if (worker.role !== 'worker') {
+        throw new ForbiddenException('Only workers can apply to jobs');
+      }
 
-    if (!worker.is_verified) {
-      throw new UnauthorizedException('Please verify your email before applying to jobs');
-    }
+      if (!worker.is_verified) {
+        throw new UnauthorizedException('Please verify your email before applying to jobs');
+      }
 
-    // Validate job exists and is open
-    const job = await this.jobsService.findOne(createApplicationDto.job_id);
-    if (!job) {
-      throw new NotFoundException('Job not found');
-    }
+      // Validate job exists and is open
+      const job = await this.jobsService.findOne(createApplicationDto.job_id);
+      if (!job) {
+        throw new NotFoundException('Job not found');
+      }
 
-    if (job.status !== 'open') {
-      throw new BadRequestException('Cannot apply to jobs that are not open');
-    }
+      if (job.status !== 'open') {
+        throw new BadRequestException('Cannot apply to jobs that are not open');
+      }
 
-    // Check if worker is the job owner (can't apply to own job)
-    if (job.client_id === workerId) {
-      throw new BadRequestException('You cannot apply to your own job');
-    }
+      // Check if worker is the job owner (can't apply to own job)
+      if (job.client_id === workerId) {
+        throw new BadRequestException('You cannot apply to your own job');
+      }
 
-    // Check if worker has already applied
-    const existingApplication = await this.checkApplicationExists(createApplicationDto.job_id, workerId);
-    if (existingApplication.hasApplied) {
-      throw new BadRequestException('You have already applied to this job');
-    }
+      // Check if worker has already applied
+      const existingApplication = await this.checkApplicationExists(createApplicationDto.job_id, workerId);
+      if (existingApplication.hasApplied) {
+        throw new BadRequestException('You have already applied to this job');
+      }
 
-    // Validate proposed budget is within job range
-    if (createApplicationDto.proposed_budget < job.budget_min || 
-        createApplicationDto.proposed_budget > job.budget_max) {
-      throw new BadRequestException(
-        `Proposed budget must be between GHS ${job.budget_min} and GHS ${job.budget_max}`
-      );
-    }
+      // Validate proposed budget is within job range
+      if (createApplicationDto.proposed_budget < job.budget_min || 
+          createApplicationDto.proposed_budget > job.budget_max) {
+        throw new BadRequestException(
+          `Proposed budget must be between GHS ${job.budget_min} and GHS ${job.budget_max}`
+        );
+      }
 
-    // Validate availability start date
-    const startDate = new Date(createApplicationDto.availability_start_date);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    
-    if (startDate < today) {
-      throw new BadRequestException('Availability start date cannot be in the past');
-    }
+      // Validate availability start date
+      const startDate = new Date(createApplicationDto.availability_start_date);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      if (startDate < today) {
+        throw new BadRequestException('Availability start date cannot be in the past');
+      }
 
-    // Prepare application data
-    const applicationData = {
-      ...createApplicationDto,
-      worker_id: workerId,
-      status: ApplicationStatus.PENDING,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    };
+      // Prepare application data
+      const applicationData = {
+        ...createApplicationDto,
+        worker_id: workerId,
+        status: ApplicationStatus.PENDING,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
 
-    // Insert application
-    const { data: application, error } = await this.supabase
-      .client
-      .from('job_applications')
-      .insert([applicationData])
-      .select('*')
-      .single();
+      // Insert application
+      const { data: application, error } = await this.supabase
+        .client
+        .from('job_applications')
+        .insert([applicationData])
+        .select('*')
+        .single();
 
-    if (error) {
-      this.logger.error('Failed to create application:', error);
+      if (error) {
+        this.logger.error('Failed to create application:', error);
+        throw new InternalServerErrorException('Failed to create application');
+      }
+
+      // Increment applications count on the job
+      await this.incrementJobApplicationsCount(createApplicationDto.job_id);
+
+      // Enrich with related data
+      const enrichedApplication = await this.enrichApplicationWithRelatedData(application);
+      return this.formatApplicationResponse(enrichedApplication);
+    } catch (error) {
+      if (error instanceof NotFoundException || 
+          error instanceof ForbiddenException || 
+          error instanceof UnauthorizedException || 
+          error instanceof BadRequestException || 
+          error instanceof InternalServerErrorException) {
+        throw error;
+      }
+      
+      this.logger.error('Unexpected error creating application:', error);
       throw new InternalServerErrorException('Failed to create application');
     }
-
-    // Increment applications count on the job
-    await this.incrementJobApplicationsCount(createApplicationDto.job_id);
-
-    // Enrich with related data
-    const enrichedApplication = await this.enrichApplicationWithRelatedData(application);
-    return this.formatApplicationResponse(enrichedApplication);
   }
 
   // ============ GET APPLICATIONS ============
@@ -178,26 +202,37 @@ export class ApplicationsService {
       throw new BadRequestException('Invalid application ID format');
     }
 
-    const { data: application, error } = await this.supabase
-      .client
-      .from('job_applications')
-      .select('*')
-      .eq('id', id)
-      .single();
+    try {
+      const { data: application, error } = await this.supabase
+        .client
+        .from('job_applications')
+        .select('*')
+        .eq('id', id)
+        .single();
 
-    if (error || !application) {
-      throw new NotFoundException('Application not found');
+      if (error || !application) {
+        this.logger.error('Application not found:', error);
+        throw new NotFoundException('Application not found');
+      }
+
+      // Check if user has permission to view this application
+      const job = await this.jobsService.findOne(application.job_id);
+      if (application.worker_id !== currentUserId && job.client_id !== currentUserId) {
+        throw new ForbiddenException('You do not have permission to view this application');
+      }
+
+      const enrichedApplication = await this.enrichApplicationWithRelatedData(application);
+      return this.formatApplicationResponse(enrichedApplication);
+    } catch (error) {
+      if (error instanceof NotFoundException || 
+          error instanceof ForbiddenException || 
+          error instanceof BadRequestException) {
+        throw error;
+      }
+      
+      this.logger.error('Unexpected error finding application:', error);
+      throw new InternalServerErrorException('Failed to fetch application');
     }
-
-    // Check if user has permission to view this application
-    // (worker who applied, or job owner)
-    const job = await this.jobsService.findOne(application.job_id);
-    if (application.worker_id !== currentUserId && job.client_id !== currentUserId) {
-      throw new ForbiddenException('You do not have permission to view this application');
-    }
-
-    const enrichedApplication = await this.enrichApplicationWithRelatedData(application);
-    return this.formatApplicationResponse(enrichedApplication);
   }
 
   async getWorkerApplications(workerId: string, filters: ApplicationFiltersDto): Promise<ApplicationListResponse> {
@@ -210,103 +245,110 @@ export class ApplicationsService {
   }
 
   async getJobApplications(jobId: string, clientId: string, filters: ApplicationFiltersDto): Promise<ApplicationListResponse> {
-    // Verify the client owns the job
-    const job = await this.jobsService.findOne(jobId);
-    if (job.client_id !== clientId) {
-      throw new ForbiddenException('You can only view applications for your own jobs');
-    }
+    try {
+      // Verify the client owns the job
+      const job = await this.jobsService.findOne(jobId);
+      if (job.client_id !== clientId) {
+        throw new ForbiddenException('You can only view applications for your own jobs');
+      }
 
-    const filtersWithJob = {
-      ...filters,
-      job_id: jobId
-    };
-
-    return this.findAll(filtersWithJob);
-  }
-
-  // Add this method to your applications.service.ts
-
-async getClientApplications(clientId: string, filters: ApplicationFiltersDto): Promise<ApplicationListResponse> {
-  this.logger.log('Fetching applications for client jobs:', clientId);
-  
-  try {
-    // First, get all job IDs for this client
-    const { data: clientJobs, error: jobsError } = await this.supabase
-      .client
-      .from('jobs')
-      .select('id')
-      .eq('client_id', clientId);
-
-    if (jobsError) {
-      this.logger.error('Failed to fetch client jobs:', jobsError);
-      throw new InternalServerErrorException('Failed to fetch client jobs');
-    }
-
-    if (!clientJobs || clientJobs.length === 0) {
-      return {
-        applications: [],
-        total: 0,
-        page: filters.page || 1,
-        limit: filters.limit || 10,
-        totalPages: 0
+      const filtersWithJob = {
+        ...filters,
+        job_id: jobId
       };
+
+      return this.findAll(filtersWithJob);
+    } catch (error) {
+      if (error instanceof ForbiddenException) {
+        throw error;
+      }
+      
+      this.logger.error('Error getting job applications:', error);
+      throw new InternalServerErrorException('Failed to fetch job applications');
     }
-
-    const jobIds = clientJobs.map(job => job.id);
-
-    // Build query for applications on client's jobs
-    let query = this.supabase
-      .client
-      .from('job_applications')
-      .select('*', { count: 'exact' })
-      .in('job_id', jobIds);
-
-    // Apply filters
-    if (filters.status) {
-      query = query.eq('status', filters.status);
-    }
-
-    // Apply pagination
-    const page = Math.max(1, filters.page ?? 1);
-    const limit = Math.min(50, Math.max(1, filters.limit ?? 10));
-    const offset = (page - 1) * limit;
-    query = query.range(offset, offset + limit - 1);
-
-    // Apply sorting
-    const sortColumn = filters.sort_by || 'created_at';
-    const sortOrder = filters.sort_order === 'ASC' ? { ascending: true } : { ascending: false };
-    query = query.order(sortColumn, sortOrder);
-
-    const { data: applications, error, count } = await query;
-
-    if (error) {
-      this.logger.error('Failed to fetch client applications:', error);
-      throw new InternalServerErrorException(`Failed to fetch applications: ${error.message}`);
-    }
-
-    // Enrich applications with related data
-    const enrichedApplications = await Promise.all(
-      (applications || []).map(app => this.enrichApplicationWithRelatedData(app))
-    );
-
-    const formattedApplications = enrichedApplications.map(app => this.formatApplicationResponse(app));
-    const totalPages = Math.ceil((count || 0) / limit);
-
-    return {
-      applications: formattedApplications,
-      total: count || 0,
-      page,
-      limit,
-      totalPages
-    };
-  } catch (error) {
-    this.logger.error('Error in getClientApplications:', error);
-    if (error instanceof InternalServerErrorException) {
-      throw error;
-    }
-    throw new InternalServerErrorException('Failed to fetch client applications');
   }
-}
+
+  async getClientApplications(clientId: string, filters: ApplicationFiltersDto): Promise<ApplicationListResponse> {
+    this.logger.log(`Fetching applications for client jobs: ${clientId}`);
+    
+    try {
+      // First, get all job IDs for this client
+      const { data: clientJobs, error: jobsError } = await this.supabase
+        .client
+        .from('jobs')
+        .select('id')
+        .eq('client_id', clientId);
+
+      if (jobsError) {
+        this.logger.error('Failed to fetch client jobs:', jobsError);
+        throw new InternalServerErrorException('Failed to fetch client jobs');
+      }
+
+      if (!clientJobs || clientJobs.length === 0) {
+        return {
+          applications: [],
+          total: 0,
+          page: filters.page || 1,
+          limit: filters.limit || 10,
+          totalPages: 0
+        };
+      }
+
+      const jobIds = clientJobs.map(job => job.id);
+
+      // Build query for applications on client's jobs
+      let query = this.supabase
+        .client
+        .from('job_applications')
+        .select('*', { count: 'exact' })
+        .in('job_id', jobIds);
+
+      // Apply filters
+      if (filters.status) {
+        query = query.eq('status', filters.status);
+      }
+
+      // Apply pagination
+      const page = Math.max(1, filters.page ?? 1);
+      const limit = Math.min(50, Math.max(1, filters.limit ?? 10));
+      const offset = (page - 1) * limit;
+      query = query.range(offset, offset + limit - 1);
+
+      // Apply sorting
+      const sortColumn = filters.sort_by || 'created_at';
+      const sortOrder = filters.sort_order === 'ASC' ? { ascending: true } : { ascending: false };
+      query = query.order(sortColumn, sortOrder);
+
+      const { data: applications, error, count } = await query;
+
+      if (error) {
+        this.logger.error('Failed to fetch client applications:', error);
+        throw new InternalServerErrorException(`Failed to fetch applications: ${error.message}`);
+      }
+
+      // Enrich applications with related data
+      const enrichedApplications = await Promise.all(
+        (applications || []).map(app => this.enrichApplicationWithRelatedData(app))
+      );
+
+      const formattedApplications = enrichedApplications.map(app => this.formatApplicationResponse(app));
+      const totalPages = Math.ceil((count || 0) / limit);
+
+      return {
+        applications: formattedApplications,
+        total: count || 0,
+        page,
+        limit,
+        totalPages
+      };
+    } catch (error) {
+      this.logger.error('Error in getClientApplications:', error);
+      if (error instanceof InternalServerErrorException) {
+        throw error;
+      }
+      throw new InternalServerErrorException('Failed to fetch client applications');
+    }
+  }
 
   async findAll(filters: ApplicationFiltersDto): Promise<ApplicationListResponse> {
     this.logger.log('Fetching applications with filters:', filters);
@@ -375,137 +417,177 @@ async getClientApplications(clientId: string, filters: ApplicationFiltersDto): P
   // ============ UPDATE APPLICATION STATUS ============
 
   async acceptApplication(id: string, clientId: string): Promise<ApplicationResponse> {
-    const application = await this.findOne(id, clientId);
-    
-    if (application.status !== ApplicationStatus.PENDING) {
-      throw new BadRequestException('Can only accept pending applications');
-    }
+    try {
+      const application = await this.findOne(id, clientId);
+      
+      if (application.status !== ApplicationStatus.PENDING) {
+        throw new BadRequestException('Can only accept pending applications');
+      }
 
-    // Update application status
-    const { data: updatedApplication, error } = await this.supabase
-      .client
-      .from('job_applications')
-      .update({
-        status: ApplicationStatus.ACCEPTED,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', id)
-      .select('*')
-      .single();
+      // Update application status
+      const { data: updatedApplication, error } = await this.supabase
+        .client
+        .from('job_applications')
+        .update({
+          status: ApplicationStatus.ACCEPTED,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', id)
+        .select('*')
+        .single();
 
-    if (error) {
+      if (error) {
+        this.logger.error('Failed to accept application:', error);
+        throw new InternalServerErrorException('Failed to accept application');
+      }
+
+      // Update job with selected worker and change status
+      await this.jobsService.update(application.job_id, {
+        selected_worker_id: application.worker_id,
+        status: 'in_progress' as any,
+        current_status: 'accepted' as any
+      }, clientId);
+
+      // Reject all other pending applications for this job
+      await this.rejectOtherApplications(application.job_id, id);
+
+      const enrichedApplication = await this.enrichApplicationWithRelatedData(updatedApplication);
+      return this.formatApplicationResponse(enrichedApplication);
+    } catch (error) {
+      if (error instanceof BadRequestException || 
+          error instanceof InternalServerErrorException) {
+        throw error;
+      }
+      
+      this.logger.error('Unexpected error accepting application:', error);
       throw new InternalServerErrorException('Failed to accept application');
     }
-
-    // Update job with selected worker and change status
-    await this.jobsService.update(application.job_id, {
-      selected_worker_id: application.worker_id,
-      status: 'in_progress' as any,
-      current_status: 'accepted' as any
-    }, clientId);
-
-    // Reject all other pending applications for this job
-    await this.rejectOtherApplications(application.job_id, id);
-
-    const enrichedApplication = await this.enrichApplicationWithRelatedData(updatedApplication);
-    return this.formatApplicationResponse(enrichedApplication);
   }
 
   async rejectApplication(id: string, clientId: string, reason?: string): Promise<ApplicationResponse> {
-    const application = await this.findOne(id, clientId);
-    
-    if (application.status !== ApplicationStatus.PENDING) {
-      throw new BadRequestException('Can only reject pending applications');
-    }
+    try {
+      const application = await this.findOne(id, clientId);
+      
+      if (application.status !== ApplicationStatus.PENDING) {
+        throw new BadRequestException('Can only reject pending applications');
+      }
 
-    const updateData: any = {
-      status: ApplicationStatus.REJECTED,
-      updated_at: new Date().toISOString()
-    };
+      const updateData: any = {
+        status: ApplicationStatus.REJECTED,
+        updated_at: new Date().toISOString()
+      };
 
-    if (reason) {
-      updateData.rejection_reason = reason;
-    }
+      if (reason) {
+        updateData.rejection_reason = reason;
+      }
 
-    const { data: updatedApplication, error } = await this.supabase
-      .client
-      .from('job_applications')
-      .update(updateData)
-      .eq('id', id)
-      .select('*')
-      .single();
+      const { data: updatedApplication, error } = await this.supabase
+        .client
+        .from('job_applications')
+        .update(updateData)
+        .eq('id', id)
+        .select('*')
+        .single();
 
-    if (error) {
+      if (error) {
+        this.logger.error('Failed to reject application:', error);
+        throw new InternalServerErrorException('Failed to reject application');
+      }
+
+      const enrichedApplication = await this.enrichApplicationWithRelatedData(updatedApplication);
+      return this.formatApplicationResponse(enrichedApplication);
+    } catch (error) {
+      if (error instanceof BadRequestException || 
+          error instanceof InternalServerErrorException) {
+        throw error;
+      }
+      
+      this.logger.error('Unexpected error rejecting application:', error);
       throw new InternalServerErrorException('Failed to reject application');
     }
-
-    const enrichedApplication = await this.enrichApplicationWithRelatedData(updatedApplication);
-    return this.formatApplicationResponse(enrichedApplication);
   }
 
   async withdrawApplication(id: string, workerId: string): Promise<ApplicationResponse> {
-    const { data: application, error: fetchError } = await this.supabase
-      .client
-      .from('job_applications')
-      .select('*')
-      .eq('id', id)
-      .single();
+    try {
+      const { data: application, error: fetchError } = await this.supabase
+        .client
+        .from('job_applications')
+        .select('*')
+        .eq('id', id)
+        .single();
 
-    if (fetchError || !application) {
-      throw new NotFoundException('Application not found');
-    }
+      if (fetchError || !application) {
+        throw new NotFoundException('Application not found');
+      }
 
-    if (application.worker_id !== workerId) {
-      throw new ForbiddenException('You can only withdraw your own applications');
-    }
+      if (application.worker_id !== workerId) {
+        throw new ForbiddenException('You can only withdraw your own applications');
+      }
 
-    if (application.status !== ApplicationStatus.PENDING) {
-      throw new BadRequestException('Can only withdraw pending applications');
-    }
+      if (application.status !== ApplicationStatus.PENDING) {
+        throw new BadRequestException('Can only withdraw pending applications');
+      }
 
-    const { data: updatedApplication, error } = await this.supabase
-      .client
-      .from('job_applications')
-      .update({
-        status: ApplicationStatus.WITHDRAWN,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', id)
-      .select('*')
-      .single();
+      const { data: updatedApplication, error } = await this.supabase
+        .client
+        .from('job_applications')
+        .update({
+          status: ApplicationStatus.WITHDRAWN,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', id)
+        .select('*')
+        .single();
 
-    if (error) {
+      if (error) {
+        this.logger.error('Failed to withdraw application:', error);
+        throw new InternalServerErrorException('Failed to withdraw application');
+      }
+
+      // Decrement applications count on the job
+      await this.decrementJobApplicationsCount(application.job_id);
+
+      const enrichedApplication = await this.enrichApplicationWithRelatedData(updatedApplication);
+      return this.formatApplicationResponse(enrichedApplication);
+    } catch (error) {
+      if (error instanceof NotFoundException || 
+          error instanceof ForbiddenException || 
+          error instanceof BadRequestException || 
+          error instanceof InternalServerErrorException) {
+        throw error;
+      }
+      
+      this.logger.error('Unexpected error withdrawing application:', error);
       throw new InternalServerErrorException('Failed to withdraw application');
     }
-
-    // Decrement applications count on the job
-    await this.decrementJobApplicationsCount(application.job_id);
-
-    const enrichedApplication = await this.enrichApplicationWithRelatedData(updatedApplication);
-    return this.formatApplicationResponse(enrichedApplication);
   }
 
   // ============ UTILITY METHODS ============
 
   async checkApplicationExists(jobId: string, workerId: string): Promise<{ hasApplied: boolean; applicationId?: string; status?: ApplicationStatus }> {
-    const { data: application, error } = await this.supabase
-      .client
-      .from('job_applications')
-      .select('id, status')
-      .eq('job_id', jobId)
-      .eq('worker_id', workerId)
-      .maybeSingle();
+    try {
+      const { data: application, error } = await this.supabase
+        .client
+        .from('job_applications')
+        .select('id, status')
+        .eq('job_id', jobId)
+        .eq('worker_id', workerId)
+        .maybeSingle();
 
-    if (error) {
-      this.logger.error('Error checking application existence:', error);
+      if (error) {
+        this.logger.error('Error checking application existence:', error);
+        return { hasApplied: false };
+      }
+
+      return {
+        hasApplied: !!application,
+        applicationId: application?.id,
+        status: application?.status as ApplicationStatus
+      };
+    } catch (error) {
+      this.logger.error('Unexpected error checking application existence:', error);
       return { hasApplied: false };
     }
-
-    return {
-      hasApplied: !!application,
-      applicationId: application?.id,
-      status: application?.status as ApplicationStatus
-    };
   }
 
   private async enrichApplicationWithRelatedData(application: any): Promise<any> {
@@ -554,6 +636,20 @@ async getClientApplications(clientId: string, filters: ApplicationFiltersDto): P
         }
       }
 
+      // Fetch booking info if available
+      if (application.booking_id) {
+        const { data: booking, error: bookingError } = await this.supabase
+          .client
+          .from('bookings')
+          .select('id, status, completion_date, rating, review, rated_at')
+          .eq('id', application.booking_id)
+          .single();
+
+        if (!bookingError && booking) {
+          enrichedApplication.booking = booking;
+        }
+      }
+
     } catch (error) {
       this.logger.error('Failed to enrich application with related data:', error);
     }
@@ -573,7 +669,8 @@ async getClientApplications(clientId: string, filters: ApplicationFiltersDto): P
       status: application.status,
       created_at: application.created_at,
       updated_at: application.updated_at,
-      rejection_reason: application.rejection_reason
+      rejection_reason: application.rejection_reason,
+      booking_id: application.booking_id
     };
 
     // Add worker info
@@ -610,6 +707,18 @@ async getClientApplications(clientId: string, filters: ApplicationFiltersDto): P
         budget_max: parseFloat(application.job.budget_max),
         status: application.job.status,
         client_id: application.job.client_id
+      };
+    }
+
+    // Add booking info
+    if (application.booking) {
+      response.booking = {
+        id: application.booking.id,
+        status: application.booking.status,
+        completion_date: application.booking.completion_date,
+        rating: application.booking.rating,
+        review: application.booking.review,
+        rated_at: application.booking.rated_at
       };
     }
 

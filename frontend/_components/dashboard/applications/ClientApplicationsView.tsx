@@ -457,15 +457,21 @@ export default function ClientApplicationsView({
                         <div className="relative flex-shrink-0">
                           {getProfilePhoto(application.worker) ? (
                             <img
-  src={application.worker?.profile_photo || undefined}
-  alt={getDisplayName(application.worker)}
-  className="mr-2"
-  onError={(e) => {
-    e.currentTarget.onerror = null; // prevent loop
-    e.currentTarget.src = "https://via.placeholder.com/150"; // fallback image
-  }}
-/>
-
+                              src={getProfilePhoto(application.worker)}
+                              alt={getDisplayName(application.worker)}
+                              className="w-12 h-12 rounded-xl object-cover border-2 border-white shadow-sm"
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                const parent = target.parentElement;
+                                if (parent) {
+                                  parent.innerHTML = `
+                                    <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center text-white text-sm font-bold shadow-sm border-2 border-white">
+                                      ${getInitials(application.worker)}
+                                    </div>
+                                  `;
+                                }
+                              }}
+                            />
                           ) : (
                             <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center text-white text-sm font-bold shadow-sm border-2 border-white">
                               {getInitials(application.worker)}

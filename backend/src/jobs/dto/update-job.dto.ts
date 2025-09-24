@@ -1,5 +1,5 @@
 import { PartialType } from '@nestjs/mapped-types';
-import { IsOptional, IsEnum, Min, Max, IsArray, IsString, IsPositive, MaxLength, IsBoolean, IsNumber, MinLength, IsUUID, isUUID } from 'class-validator';
+import { IsOptional, IsEnum, Min, Max, IsArray, IsString, IsPositive, MaxLength, IsBoolean, IsNumber, MinLength, IsUUID, isUUID, IsDateString } from 'class-validator';
 import { CreateJobDto } from './create-job.dto';
 import { JobStatus, JobCurrentStatus } from 'src/entities/job.entity';
 import { Transform, Type } from 'class-transformer';
@@ -168,7 +168,11 @@ export class UpdateJobDto extends PartialType(CreateJobDto) {
   current_status?: JobCurrentStatus;
 
   @IsOptional()
+  @IsDateString()
+  actual_completion_date?: string;
+
+
+  @IsOptional()
   @IsUUID()
   selected_worker_id?: string;
-
 }

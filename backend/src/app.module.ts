@@ -7,6 +7,8 @@ import { OnboardingModule } from './onboarding/onboarding.module';
 import configuration from './config/configuration';
 import { JobsModule } from './jobs/jobs.module';
 import { ApplicationsModule } from './applications/applications.module';
+import { BookingsModule } from './bookings/bookings.module';
+import { ReviewsModule } from './reviews/reviews.module';
 
 @Module({
   imports: [
@@ -20,7 +22,9 @@ import { ApplicationsModule } from './applications/applications.module';
     AuthModule,
     OnboardingModule,
     JobsModule,
-    ApplicationsModule
+    ApplicationsModule,
+    BookingsModule,
+    ReviewsModule
   ],
 })
 export class AppModule {}

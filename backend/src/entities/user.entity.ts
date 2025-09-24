@@ -1,8 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, OneToOne, OneToMany } from 'typeorm';
-import { WorkerProfile } from './worker-profile.entity';
 import { Job } from './job.entity';
 import { Booking } from './booking.entity';
-import { Message } from './message.entity';
 import { Review } from './review.entity';
 import { JobApplication } from './job-application.entity';
 
@@ -20,7 +18,8 @@ export class User {
   @Column({ 
     type: 'enum', 
     enum: ['client', 'worker', 'admin'],
-    default: 'client'
+    default: null,
+    nullable: true
   })
   role: string;
 
@@ -70,33 +69,24 @@ export class User {
   @Column({ name: 'updated_at', default: () => 'CURRENT_TIMESTAMP' })
   updatedAt: Date;
 
-  @OneToOne(() => WorkerProfile, profile => profile.user)
-  workerProfile: WorkerProfile;
-
   @OneToMany(() => Job, job => job.client)
   jobs: Job[];
-
-  // @OneToMany(() => Proposal, proposal => proposal.worker)
-  // proposals: Proposal[];
 
   @OneToMany(() => JobApplication, application => application.worker)
   workerApplications: JobApplication[];
 
-  @OneToMany(() => Booking, booking => booking.client)
-  clientBookings: Booking[];
+@OneToMany(() => Booking, booking => booking.client)
+client: Booking[];
 
-  @OneToMany(() => Booking, booking => booking.worker)
-  workerBookings: Booking[];
+@OneToMany(() => Booking, booking => booking.client)
+clientBookings: Booking[];
 
-  @OneToMany(() => Message, message => message.fromUser)
-  sentMessages: Message[];
+@OneToMany(() => Booking, booking => booking.worker)
+workerBookings: Booking[];
 
-  @OneToMany(() => Message, message => message.toUser)
-  receivedMessages: Message[];
+@OneToMany(() => Review, review => review.reviewer)
+reviewsGiven: Review[];
 
-  @OneToMany(() => Review, review => review.reviewer)
-  reviewsGiven: Review[];
-
-  @OneToMany(() => Review, review => review.subject)
-  reviewsReceived: Review[];
+@OneToMany(() => Review, review => review.reviewee)
+reviewsReceived: Review[];
 }

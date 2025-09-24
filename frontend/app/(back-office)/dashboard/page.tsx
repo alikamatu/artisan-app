@@ -14,6 +14,7 @@ import {
   Star,
   ArrowRight,
   Calendar,
+  User,
 } from 'lucide-react';
 
 interface DashboardStats {
@@ -115,6 +116,26 @@ export default function DashboardPage() {
     }
   };
 
+  // Add this helper function at the top of your dashboard component
+const formatLocationDisplay = (location: any) => {
+  if (!location) return 'Location not specified';
+  
+  if (typeof location === 'string') {
+    return location;
+  }
+  
+  if (typeof location === 'object') {
+    const { city, region, specific_address } = location;
+    if (city && region) {
+      return `${city}, ${region.split('_').map((word: string) => 
+        word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}`;
+    }
+    return city || region || 'Location not specified';
+  }
+  
+  return 'Location not specified';
+};
+
   const loadWorkerDashboard = async (token: string) => {
     try {
       // Get recent jobs for workers to browse
@@ -212,7 +233,7 @@ export default function DashboardPage() {
                   <span className="font-medium">Post New Job</span>
                 </button>
                 <button
-                  onClick={() => router.push('/dashboard/jobs/my-jobs')}
+                  onClick={() => router.push('/dashboard/user-profile/my-jobs')}
                   className="flex items-center gap-3 p-4 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
                 >
                   <Briefcase className="h-5 w-5" />
@@ -229,7 +250,7 @@ export default function DashboardPage() {
                   onClick={() => router.push('/dashboard/profile')}
                   className="flex items-center gap-3 p-4 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
                 >
-                  <Star className="h-5 w-5" />
+                  <User className="h-5 w-5" />
                   <span className="font-medium">Profile</span>
                 </button>
               </>
@@ -343,7 +364,7 @@ export default function DashboardPage() {
               {currentUser.role === 'client' ? 'Recent Jobs' : 'Available Opportunities'}
             </h2>
             <button
-              onClick={() => router.push(currentUser.role === 'client' ? '/jobs/my-jobs' : '/jobs')}
+              onClick={() => router.push(currentUser.role === 'client' ? '/dashboard/jobs/my-jobs' : '/dashboard/jobs')}
               className="flex items-center gap-1 text-blue-600 hover:text-blue-700 transition-colors"
             >
               <span>View all</span>
@@ -366,7 +387,7 @@ export default function DashboardPage() {
                 </p>
                 {currentUser.role === 'client' && (
                   <button
-                    onClick={() => router.push('/jobs/create')}
+                    onClick={() => router.push('/dashboard/jobs/create')}
                     className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                   >
                     <PlusCircle className="h-4 w-4" />
@@ -379,7 +400,7 @@ export default function DashboardPage() {
                 {recentJobs.map((job) => (
                   <div
                     key={job.id}
-                    onClick={() => router.push(`/jobs/${job.id}`)}
+                    onClick={() => router.push(`/dashboard/jobs/${job.id}`)}
                     className="p-4 hover:bg-gray-50 cursor-pointer transition-colors"
                   >
                     <div className="flex items-start justify-between mb-2">
@@ -397,10 +418,10 @@ export default function DashboardPage() {
                     </div>
                     
                     <div className="flex items-center gap-4 text-sm text-gray-600 mb-2">
-                      <div className="flex items-center gap-1">
-                        <MapPin className="h-4 w-4" />
-                        <span>{job.location}</span>
-                      </div>
+<div className="flex items-center gap-1">
+  <MapPin className="h-4 w-4" />
+  <span>{formatLocationDisplay(job.location)}</span> {/* Changed this line */}
+</div>
                       <div className="flex items-center gap-1">
                         <DollarSign className="h-4 w-4" />
                         <span>GHS {job.budget_min.toLocaleString()} - GHS {job.budget_max.toLocaleString()}</span>
@@ -548,7 +569,7 @@ export default function DashboardPage() {
                 </div>
               </div>
               <button
-                onClick={() => router.push('/jobs')}
+                onClick={() => router.push('/dashboard/jobs')}
                 className="w-full mt-4 text-blue-600 text-sm hover:text-blue-700 font-medium"
               >
                 View All Recommendations

@@ -466,3 +466,27 @@ export const applicationStatusLabels = {
   [ApplicationStatus.REJECTED]: 'Application Rejected',
   [ApplicationStatus.WITHDRAWN]: 'Application Withdrawn'
 };
+
+export const categoryLabels: Record<string, string> = {
+  'plumbing': 'Plumbing',
+  'electrical': 'Electrical', 
+  'tutoring': 'Tutoring & Education',
+  'cleaning': 'Cleaning Services',
+  'carpentry': 'Carpentry & Woodwork',
+  'painting': 'Painting & Decoration',
+  'gardening': 'Gardening & Landscaping',
+  'repairs': 'General Repairs',
+  'delivery': 'Delivery & Transport',
+  'tech_support': 'Tech Support',
+  'personal_care': 'Personal Care',
+  'automotive': 'Automotive Services',
+  'beauty': 'Beauty & Wellness',
+  'fitness': 'Fitness & Training',
+  'event_planning': 'Event Planning',
+  'photography': 'Photography & Video',
+  'writing': 'Writing & Content',
+  'translation': 'Translation & Languages',
+  'legal': 'Legal Services',
+  'accounting': 'Accounting & Finance',
+  'other': 'Other Services'
+};
