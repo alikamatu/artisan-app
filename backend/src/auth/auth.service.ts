@@ -15,6 +15,7 @@ import { RegisterDto } from './dto/register.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { User } from 'src/entities/user.entity';
+import { max } from 'class-validator';
 
 export interface UserProfileResponse {
   // Base user info
@@ -202,11 +203,91 @@ export class AuthService {
     };
   }
 
-  // ============ USER PROFILE METHODS ============
-
   /**
-   * Get current user's complete profile with all sensitive data
-   */
+ * Get public profile for any user (limited data)
+ */
+async getPublicUserProfile(userId: string): Promise<any> {
+  const { data: user, error } = await this.supabase
+    .client
+    .from('user')
+    .select(`
+      id,
+      name,
+      email,
+      phone,
+      role,
+      region,
+      is_verified,
+      verification_level,
+      created_at,
+      updated_at,
+      verified_at,
+      metadata
+    `)
+    .eq('id', userId)
+    .single();
+
+  if (error || !user) {
+    throw new NotFoundException('User not found');
+  }
+
+  // Only include public-safe data
+  const publicProfile = {
+    id: user.id,
+    name: user.name,
+    role: user.role,
+    bio: user.metadata?.profile?.bio || null,
+    profilePhoto: user.metadata?.profile?.photo || null,
+    businessName: user.metadata?.profile?.businessName || null,
+    skills: user.metadata?.professional?.skills || [],
+    services: user.metadata?.professional?.services || [],
+    experience: user.metadata?.professional?.experience || null,
+    hourlyRate: user.metadata?.pricing?.hourly_rate || null,
+    serviceArea: user.metadata?.pricing?.service_area || null,
+    totalJobs: user.metadata?.stats?.total_jobs || 0,
+    completedJobs: user.metadata?.stats?.completed_jobs || 0,
+    rating: user.metadata?.stats?.rating || null,
+    education: user.metadata?.professional?.education || null,
+    certifications: user.metadata?.professional?.certifications || [],
+    maxDistance: user.metadata?.pricing?.max_distance || null,
+    company: user.metadata?.profile?.company || null,
+    region: user.region,
+    isVerified: user.is_verified,
+    verificationLevel: user.verification_level,
+    createdAt: user.created_at,
+    updatedAt: user.updated_at,
+    verifiedAt: user.verified_at
+  };
+
+  // Add metadata fields that are safe for public viewing
+  const metadata = user.metadata || {};
+  if (metadata.profile) {
+    if (metadata.profile.bio) publicProfile.bio = metadata.profile.bio;
+    if (metadata.profile.photo) publicProfile.profilePhoto = metadata.profile.photo;
+    if (metadata.profile.businessName) publicProfile.businessName = metadata.profile.businessName;
+  }
+
+  if (user.role === 'worker' && metadata.professional) {
+    publicProfile.skills = metadata.professional.skills || [];
+    publicProfile.services = metadata.professional.services || [];
+    publicProfile.experience = metadata.professional.experience;
+    publicProfile.education = metadata.professional.education;
+    publicProfile.certifications = metadata.professional.certifications || [];
+  }
+
+  if (user.role === 'worker' && metadata.pricing) {
+    publicProfile.hourlyRate = metadata.pricing.hourly_rate;
+    publicProfile.serviceArea = metadata.pricing.service_area;
+    publicProfile.maxDistance = metadata.pricing.max_distance;
+  }
+
+  if (user.role === 'client' && metadata.profile) {
+    publicProfile.company = metadata.profile.company;
+  }
+
+  return publicProfile;
+}
+
   async getCurrentUserProfile(userId: string): Promise<UserProfileResponse> {
     const { data: user, error } = await this.supabase
       .client
@@ -231,35 +312,6 @@ export class AuthService {
     }
 
     return this.formatUserProfile(user, profileData, false); // false = include sensitive data
-  }
-
-  /**
-   * Get public profile for any user (limited data)
-   */
-  async getPublicUserProfile(userId: string): Promise<UserProfileResponse> {
-    const { data: user, error } = await this.supabase
-      .client
-      .from('user')
-      .select('id, name, role, region, is_verified, verification_level, created_at, updated_at, verified_at, metadata')
-      .eq('id', userId)
-      .single();
-
-    if (error || !user) {
-      throw new NotFoundException('User not found');
-    }
-
-    // Fetch additional profile data based on role
-    let profileData = {};
-    
-    if (user.role === 'worker') {
-      const workerProfile = await this.getWorkerProfileData(userId);
-      profileData = { ...profileData, ...workerProfile };
-    } else if (user.role === 'client') {
-      const clientProfile = await this.getClientProfileData(userId, true); // true = public only
-      profileData = { ...profileData, ...clientProfile };
-    }
-
-    return this.formatUserProfile(user, profileData, true); // true = public profile
   }
 
   /**

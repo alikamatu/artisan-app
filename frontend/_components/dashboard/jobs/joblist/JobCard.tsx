@@ -1,4 +1,4 @@
-import { categoryIcons, regionNames, statusColors, urgencyColors, urgencyLabels, categoryLabels } from "@/constants/jobConstants";
+import { categoryIcons, regionNames, statusColors, urgencyColors, urgencyLabels } from "@/constants/jobConstants";
 import { GhanaRegion, Job, JobStatus } from "@/lib/types/jobs";
 import { Bookmark, Calendar, CheckCircle, Clock, DollarSign, Eye, MapPin, Send, Users } from "lucide-react";
 import { memo } from "react";
@@ -32,16 +32,9 @@ const parseLocation = (location: any) => {
   return null;
 };
 
-const GetProfilePhoto = ({ user }: { user: any }) => {
+export const GetProfilePhoto = ({ user }: { user: any }) => {
   const photo = user?.profile_photo || user?.metadata?.profile?.photo || user?.parsedMetadata?.profile?.photo;
   return photo ? <img src={photo} alt="Profile" width={40} height={40} className="rounded-full w-12 h-12 object-cover border-2 border-white shadow-sm" loading="lazy" /> : null;
-};
-
-const GetInitials = ({ user }: { user: any }) => {
-  if (user?.first_name && user?.last_name) return <span>{`${user.first_name.charAt(0)}${user.last_name.charAt(0)}`.toUpperCase()}</span>;
-  if (user?.display_name) return <span>{user.display_name.split(' ').map((word: string) => word.charAt(0)).join('').toUpperCase().slice(0, 2)}</span>;
-  if (user?.name) return <span>{user.name.split(' ').map((word: string) => word.charAt(0)).join('').toUpperCase().slice(0, 2)}</span>;
-  return <span>U</span>;
 };
 
 const GetDisplayName = ({ user }: { user: any }) => (

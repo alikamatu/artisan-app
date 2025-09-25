@@ -7,6 +7,7 @@ interface ProfileData {
   address?: string;
   lastName?: string;
   firstName?: string;
+  profilePhoto: string;
   businessName?: string;
 }
 
@@ -61,6 +62,8 @@ interface UserProfileData {
   phone?: string;
   role: 'client' | 'worker';
   region?: string;
+  profilePhoto?: string;
+  targetProfile?: string;
   isVerified?: boolean;
   verificationLevel?: number;
   createdAt?: string;

@@ -84,10 +84,10 @@ export class AuthController {
   }
 
   @UseGuards(JwtAuthGuard)
-  @Get('user/:userId')
-  async getUserProfile(@Param('userId') userId: string) {
-    return this.authService.getPublicUserProfile(userId);
-  }
+@Get('user/:userId')
+async getUserProfile(@Param('userId') userId: string) {
+  return this.authService.getPublicUserProfile(userId);
+}
 
   /**
    * Update user's notification preferences
