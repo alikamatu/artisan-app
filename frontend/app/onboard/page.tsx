@@ -75,7 +75,7 @@ export default function OnBoard() {
     if (status) {
       if (status.completed) {
         // Redirect if onboarding is already complete
-        const dashboardPath = status.role === 'client' ? '/client/dashboard' : '/worker/dashboard';
+        const dashboardPath = status.role === 'client' ? '/dashboard' : '/dashboard';
         router.push(dashboardPath);
         return;
       }

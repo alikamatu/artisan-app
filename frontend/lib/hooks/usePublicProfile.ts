@@ -25,13 +25,34 @@ interface PublicProfileData {
   experience?: string;
   education?: string;
   certifications?: string[];
+  account_type?: string;
+  location?: string;
   hourlyRate?: number;
   serviceArea?: string;
   maxDistance?: number;
   company?: string;
   totalJobsPosted?: number;
+  working_hours?: {
+    start: string;
+    end: string;
+  };
+  available_days?: string[];
   averageRating?: number;
   description?: string;
+  mobile_money_provider?: string;
+  bank_name?: string | null;
+  account_name?: string;
+  account_number?: string;
+  routing_number?: string | null;
+  accountStatus?: string;
+  onboardingProgress?: {
+    basic: boolean;
+    pricing: boolean;
+    financial: boolean;
+    professional: boolean;
+    verification: boolean;
+  };
+  businessName?: string;
 }
 
 export const usePublicProfile = (userId: string) => {

@@ -26,6 +26,7 @@ import { ApplicationStatus } from '@/lib/types/applications';
 import { useAuth } from '@/context/AuthContext';
 import { applicationStatusColors, applicationStatusLabels, urgencyColors, urgencyLabels, regionNames, categoryLabels } from '@/constants/jobConstants';
 import { formatLocationDisplay, parseLocation, formatCategory, getInitials, getProfilePhoto, getDisplayName, formatDate, formatBudget } from '@/helpers/job-helpers';
+import { UserProfileLink } from '@/_components/common/UserProfileLink';
 
 interface JobDetailProps {
   jobId: string;
@@ -395,7 +396,12 @@ export default function JobDetailPage({ jobId }: JobDetailProps) {
                           </div>
                           <div className="flex-1">
                             <h4 className="text-lg font-bold text-gray-900">
-                              {getDisplayName(job.client)}
+                              <UserProfileLink 
+                                userId={job.client?.id}  // This should be the client's user ID
+                                userName={getDisplayName(job.client)}
+                                userPhoto={job.client?.profile_photo || getProfilePhoto(job.client)}
+                                showPhoto={false}
+                              />
                             </h4>
                             <p className="text-sm text-blue-600 font-medium">
                               Client {job.client.verification_status === 'verified' && (

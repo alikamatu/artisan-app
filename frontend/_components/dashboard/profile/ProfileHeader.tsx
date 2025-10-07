@@ -6,17 +6,16 @@ import {
   MdEdit, MdVerified, MdBusiness, MdPerson, MdLocationOn
 } from 'react-icons/md';
 
-// ProfileHeader Component
 interface ProfileHeaderProps {
   profile: {
     name?: string;
+    role: 'client' | 'worker';
     profile?: {
       firstName?: string;
       lastName?: string;
       photo?: string;
       businessName?: string;
     };
-    role: 'client' | 'worker';
     isVerified?: boolean;
     company?: string;
     region?: string;
