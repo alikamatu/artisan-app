@@ -9,6 +9,12 @@ interface ProfileData {
   firstName?: string;
   profilePhoto: string;
   businessName?: string;
+    profile: {
+    name?: string;
+    phone?: string;
+    region?: string;
+    role: 'client' | 'worker';
+    }
 }
 
 interface ProfessionalData {
@@ -75,6 +81,7 @@ interface UserProfileData {
   company?: string;
   totalJobsPosted?: number;
   averageRating?: number;
+  
   
   // Raw metadata from backend
   metadata?: {

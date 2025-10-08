@@ -66,6 +66,8 @@ const bookingsApi = {
   },
 
   async updateBooking(id: string, data: UpdateBookingData): Promise<Booking> {
+    console.log('Updating booking:', { id, data });
+    
     const response = await fetch(`${API_CONFIG.baseURL}/bookings/${id}`, {
       method: 'PATCH',
       headers: getAuthHeaders(),
@@ -74,14 +76,29 @@ const bookingsApi = {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
+      console.error('Booking update error:', errorData);
       throw new Error(errorData.message || `Failed to update booking: ${response.status}`);
     }
 
     return response.json();
   },
 
-  async markAsCompleted(id: string, completionProof?: CompletionProof[]): Promise<Booking> {
-    const response = await fetch(`${API_CONFIG.baseURL}/bookings/${id}/complete`, {
+    async startWork(bookingId: string): Promise<Booking> {
+    const response = await fetch(`${API_CONFIG.baseURL}/bookings/${bookingId}/start`, {
+      method: 'PATCH',
+      headers: getAuthHeaders()
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || `Failed to start booking: ${response.status}`);
+    }
+
+    return response.json();
+  },
+
+  async markAsCompleted(bookingId: string, completionProof?: any[]): Promise<Booking> {
+    const response = await fetch(`${API_CONFIG.baseURL}/bookings/${bookingId}/complete`, {
       method: 'PATCH',
       headers: getAuthHeaders(),
       body: JSON.stringify({ completion_proof: completionProof })
@@ -239,6 +256,22 @@ export const useBookingActions = () => {
     }
   }, []);
 
+    const startWork = useCallback(async (bookingId: string): Promise<Booking> => {
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      const response = await bookingsApi.startWork(bookingId);
+      return response;
+    } catch (err) {
+      const errorMessage = handleApiError(err);
+      setError(errorMessage);
+      throw new Error(errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
   const markAsCompleted = useCallback(async (id: string, completionProof?: CompletionProof[]): Promise<Booking> => {
     setIsLoading(true);
     setError(null);
@@ -273,6 +306,7 @@ export const useBookingActions = () => {
 
   return {
     updateBooking,
+    startWork,
     markAsCompleted,
     cancelBooking,
     isLoading,

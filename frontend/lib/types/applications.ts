@@ -12,6 +12,7 @@ export interface JobApplication {
   cover_letter: string;
   proposed_budget: number;
   estimated_completion_time: string;
+  completion_date?: string | null;
   availability_start_date: string;
   status: ApplicationStatus;
   created_at: string;
@@ -25,6 +26,7 @@ export interface JobApplication {
     completion_date?: string | null;
     review?: string | null;
     rated_at?: string | null;
+    start_date: string;
     rating?: {
       id: string;
       overall_rating: number;
@@ -64,6 +66,7 @@ export interface CreateApplicationData {
   cover_letter: string;
   proposed_budget: number;
   estimated_completion_time: string;
+  completion_date?: string;
   availability_start_date: string;
 }
 

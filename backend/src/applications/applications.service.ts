@@ -28,6 +28,7 @@ export interface ApplicationResponse {
   proposed_budget: number;
   estimated_completion_time: string;
   availability_start_date: string;
+  completion_date?: string;
   status: ApplicationStatus;
   created_at: string;
   updated_at: string;
@@ -666,6 +667,7 @@ export class ApplicationsService {
       proposed_budget: parseFloat(application.proposed_budget),
       estimated_completion_time: application.estimated_completion_time,
       availability_start_date: application.availability_start_date,
+      completion_date: application.completion_date,
       status: application.status,
       created_at: application.created_at,
       updated_at: application.updated_at,

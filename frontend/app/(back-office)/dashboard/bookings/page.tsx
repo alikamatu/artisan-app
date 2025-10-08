@@ -9,20 +9,15 @@ import {
   CheckCircle, 
   XCircle, 
   AlertTriangle,
-  Upload,
   MessageSquare,
   Star,
   FileText,
   Camera,
   Video,
-  File,
   Eye,
   Trash2,
   Plus,
-  MapPin,
   Briefcase,
-  ThumbsUp,
-  ThumbsDown
 } from 'lucide-react';
 import { useBookings, useBookingActions } from '@/lib/hooks/useBookings';
 import { useCreateReview, useCanReview } from '@/lib/hooks/useReviews';

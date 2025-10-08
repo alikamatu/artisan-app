@@ -26,6 +26,12 @@ export class UpdateApplicationDto {
   @MaxLength(200, { message: 'Estimated completion time must not exceed 200 characters' })
   estimated_completion_time?: string;
 
+
+
+  @IsDateString()
+  @IsOptional()
+  completion_date?: string;
+
   @IsDateString()
   @IsOptional()
   availability_start_date?: string;

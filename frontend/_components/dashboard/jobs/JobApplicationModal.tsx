@@ -19,6 +19,7 @@ export default function JobApplicationModal({ job, isOpen, onClose, onSuccess }:
     cover_letter: '',
     proposed_budget: job.budget_min || 0,
     estimated_completion_time: '',
+    completion_date: '',
     availability_start_date: new Date().toISOString().split('T')[0]
   });
   const [showSuccess, setShowSuccess] = useState(false);
@@ -37,6 +38,7 @@ export default function JobApplicationModal({ job, isOpen, onClose, onSuccess }:
         cover_letter: formData.cover_letter.trim(),
         proposed_budget: formData.proposed_budget,
         estimated_completion_time: formData.estimated_completion_time,
+        completion_date: formData.completion_date,
         availability_start_date: formData.availability_start_date
       };
 
@@ -52,6 +54,7 @@ export default function JobApplicationModal({ job, isOpen, onClose, onSuccess }:
           cover_letter: '',
           proposed_budget: job.budget_min || 0,
           estimated_completion_time: '',
+          completion_date: '',
           availability_start_date: new Date().toISOString().split('T')[0]
         });
       }, 2000);
@@ -196,6 +199,22 @@ export default function JobApplicationModal({ job, isOpen, onClose, onSuccess }:
                 required
               />
             </div>
+
+            {/* Completion Date */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-900 mb-2">
+                Completion Date *
+              </label>
+              <input
+                type="date"
+                value={formData.completion_date}
+                onChange={(e) => handleInputChange('completion_date', e.target.value)}
+                min={new Date().toISOString().split('T')[0]}
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                disabled={isLoading || showSuccess}
+                required
+              />
+            </div>  
 
             {/* Availability Start Date */}
             <div>

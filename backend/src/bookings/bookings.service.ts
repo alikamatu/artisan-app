@@ -392,11 +392,54 @@ export class BookingsService {
     }
   }
 
+  async startWork(id: string, workerId: string): Promise<BookingResponse> {
+    try {
+      const booking = await this.findOne(id, workerId);
+      
+      // Only worker can start work
+      if (booking.worker_id !== workerId) {
+        throw new ForbiddenException('Only the assigned worker can start work on this booking');
+      }
+      
+      if (booking.status !== BookingStatus.ACTIVE) {
+        throw new BadRequestException('Can only start work on active bookings');
+      }
+
+      const updateData: any = {
+        updated_at: new Date().toISOString()
+      };
+
+      const { data: updatedBooking, error } = await this.supabase
+        .client
+        .from('bookings')
+        .update(updateData)
+        .eq('id', id)
+        .select('*')
+        .single();
+
+      if (error) {
+        this.logger.error('Failed to start work on booking:', error);
+        throw new InternalServerErrorException('Failed to start work on booking');
+      }
+      const enrichedBooking = await this.enrichBookingWithRelatedData(updatedBooking);
+      return this.formatBookingResponse(enrichedBooking);
+    } catch (error) {
+      if (error instanceof ForbiddenException || 
+          error instanceof BadRequestException || 
+          error instanceof InternalServerErrorException) {
+        throw error;
+      }
+
+      this.logger.error('Unexpected error starting work on booking:', error);
+      throw new InternalServerErrorException('Failed to start work on booking');
+    }
+  }
+
   async cancel(id: string, currentUserId: string, reason?: string): Promise<BookingResponse> {
     try {
       const booking = await this.findOne(id, currentUserId);
-      
-      if (booking.status !== BookingStatus.ACTIVE) {
+
+      if (booking.status !== BookingStatus.ACTIVE && booking.status !== BookingStatus.DISPUTED) {
         throw new BadRequestException('Can only cancel active bookings');
       }
 

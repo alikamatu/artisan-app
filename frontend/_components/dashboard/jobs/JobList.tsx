@@ -95,7 +95,7 @@ export default function JobList({
 
   const handleApplyToJob = useCallback((e: React.MouseEvent, jobId: string) => {
     e.stopPropagation();
-    router.push(`/dashboard/jobs/${jobId}/apply`);
+    router.push(`/dashboard/jobs/${jobId}`);
   }, [router]);
 
   const toggleSaveJob = useCallback((e: React.MouseEvent, jobId: string) => {

@@ -41,8 +41,21 @@ export class BookingsController {
   }
 
   /**
+   * Get all bookings (admin only)
+   * GET /bookings/admin/all
+   * IMPORTANT: This must come BEFORE the :id route
+   */
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Get('admin/all')
+  async getAllBookingsAdmin(@Query() filters: BookingFiltersDto) {
+    this.logger.log('Admin accessing all bookings');
+    return this.bookingsService.findAll(filters);
+  }
+
+  /**
    * Get user's bookings (both client and worker)
    * GET /bookings/my-bookings
+   * IMPORTANT: Specific routes before :id route
    */
   @UseGuards(JwtAuthGuard)
   @Get('my-bookings')
@@ -57,6 +70,7 @@ export class BookingsController {
   /**
    * Get single booking
    * GET /bookings/:id
+   * IMPORTANT: This should come AFTER all specific string routes
    */
   @UseGuards(JwtAuthGuard)
   @Get(':id')
@@ -66,23 +80,9 @@ export class BookingsController {
   }
 
   /**
-   * Update booking
-   * PATCH /bookings/:id
-   */
-  @UseGuards(JwtAuthGuard)
-  @Patch(':id')
-  async update(
-    @Param('id') id: string,
-    @Body(ValidationPipe) updateBookingDto: UpdateBookingDto,
-    @CurrentUser() user: User
-  ) {
-    this.logger.log(`User ${user.id} updating booking ${id}`);
-    return this.bookingsService.update(id, updateBookingDto, user.id);
-  }
-
-  /**
    * Mark booking as completed (client only)
    * PATCH /bookings/:id/complete
+   * IMPORTANT: Specific action routes before generic :id update
    */
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('client')
@@ -99,6 +99,7 @@ export class BookingsController {
   /**
    * Cancel booking
    * PATCH /bookings/:id/cancel
+   * IMPORTANT: Specific action routes before generic :id update
    */
   @UseGuards(JwtAuthGuard)
   @Patch(':id/cancel')
@@ -112,14 +113,31 @@ export class BookingsController {
   }
 
   /**
-   * Get all bookings (admin only)
-   * GET /bookings/admin/all
+   * Update booking
+   * PATCH /bookings/:id
+   * IMPORTANT: Generic :id route should come LAST
    */
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('super_admin', 'hostel_admin')
-  @Get('admin/all')
-  async getAllBookingsAdmin(@Query() filters: BookingFiltersDto) {
-    this.logger.log('Admin accessing all bookings');
-    return this.bookingsService.findAll(filters);
+  @UseGuards(JwtAuthGuard)
+  @Patch(':id')
+  async update(
+    @Param('id') id: string,
+    @Body(ValidationPipe) updateBookingDto: UpdateBookingDto,
+    @CurrentUser() user: User
+  ) {
+    this.logger.log(`User ${user.id} updating booking ${id}`);
+    return this.bookingsService.update(id, updateBookingDto, user.id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Patch(':id/start')
+  async startWork(
+    @Param('id') id: string,
+    @CurrentUser() user: User
+  ) {
+    this.logger.log(`Worker ${user.id} starting work on booking ${id}`);
+    if (user.role !== 'worker') {
+      throw new ForbiddenException('Only workers can start work on bookings');
+    }
+    return this.bookingsService.startWork(id, user.id);
   }
 }

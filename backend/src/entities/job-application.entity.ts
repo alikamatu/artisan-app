@@ -35,6 +35,9 @@ export class JobApplication {
   @Column({ type: 'text' })
   estimated_completion_time: string;
 
+  @Column({ type: 'date', nullable: true })
+  completion_date: Date | null;
+
   @Column({ type: 'date' })
   availability_start_date: Date;
 

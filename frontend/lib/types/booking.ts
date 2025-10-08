@@ -1,9 +1,40 @@
-export enum BookingStatus {
-  ACTIVE = 'active',
-  COMPLETED = 'completed',
-  CANCELLED = 'cancelled',
-  DISPUTED = 'disputed'
+import { CheckCircle, Clock, Flag, XCircle, LucideIcon } from "lucide-react";
+
+export type BookingStatus = 'active' | 'completed' | 'cancelled' | 'disputed';
+
+export interface BookingStatusConfig {
+  color: string;
+  icon: LucideIcon;
+  label: string;
+  description: string;
 }
+
+export const STATUS_CONFIG: Record<BookingStatus, BookingStatusConfig> = {
+  active: {
+    color: 'text-blue-700 bg-blue-100 border-blue-200',
+    icon: Clock,
+    label: 'Active',
+    description: 'Ready to start work'
+  },
+  completed: {
+    color: 'text-green-700 bg-green-100 border-green-200',
+    icon: CheckCircle,
+    label: 'Completed',
+    description: 'Successfully finished'
+  },
+  cancelled: {
+    color: 'text-red-700 bg-red-100 border-red-200',
+    icon: XCircle,
+    label: 'Cancelled',
+    description: 'Booking cancelled'
+  },
+  disputed: {
+    color: 'text-orange-700 bg-orange-100 border-orange-200',
+    icon: Flag,
+    label: 'Disputed',
+    description: 'Issue reported'
+  }
+};
 
 export interface Booking {
   id: string;
@@ -21,6 +52,16 @@ export interface Booking {
   completion_proof?: CompletionProof[];
   created_at: string;
   updated_at: string;
+  rating?: {
+    overall_rating: number;
+    categories: {
+      category: string;
+      rating: number;
+    }[];
+  };
+  completion_date?: string;
+  estimated_duration: string;
+  agreed_budget: number;
   
   // Relations
   application?: any;
