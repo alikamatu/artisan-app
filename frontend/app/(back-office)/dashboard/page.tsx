@@ -233,11 +233,11 @@ const formatLocationDisplay = (location: any) => {
                   <span className="font-medium">Post New Job</span>
                 </button>
                 <button
-                  onClick={() => router.push('/dashboard/user-profile/my-jobs')}
+                  onClick={() => router.push('/dashboard/jobs/booking')}
                   className="flex items-center gap-3 p-4 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
                 >
                   <Briefcase className="h-5 w-5" />
-                  <span className="font-medium">My Jobs</span>
+                  <span className="font-medium">Manage Bookings</span>
                 </button>
                 <button
                   onClick={() => router.push('/dashboard/jobs/applications')}

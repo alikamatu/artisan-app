@@ -12,7 +12,7 @@ import OverviewTab from './tabs/OverviewTab';
 import ActivityTab from './tabs/ActivityTab';
 import ReviewsTab from './tabs/ReviewsTab';
 import PortfolioTab from './tabs/PortfolioTab';
-import { EditProfileDialog } from '../dashboard/profile/EditProfileDialog';
+import { EditProfileDialog } from './EditProfileDialog'
 
 
 interface ProfilePageProps {
