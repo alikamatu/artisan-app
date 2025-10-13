@@ -132,7 +132,7 @@ export class BookingsService {
 
       // Update job status
       await this.jobsService.update(application.job_id, {
-        status: 'in_progress' as any,
+        status: 'active' as any,
         current_status: 'booked' as any
       }, clientId);
 

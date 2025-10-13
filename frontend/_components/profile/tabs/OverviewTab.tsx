@@ -1,5 +1,5 @@
 import React from 'react';
-import { User, Award, Briefcase, Shield, Clock, MapPin, Building, CheckCircle, FileText, TrendingUp, Eye, DollarSign } from 'lucide-react';
+import { User, Award, Briefcase, Shield, Clock, MapPin, CheckCircle, FileText, TrendingUp, Eye, DollarSign } from 'lucide-react';
 
 interface OverviewTabProps {
   profile: any;
@@ -10,12 +10,12 @@ export default function OverviewTab({ profile, isOwnProfile = false }: OverviewT
   const isWorker = profile.role === 'worker';
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-2">
       {/* Main Content */}
-      <div className="lg:col-span-2 space-y-6">
+      <div className="lg:col-span-2 space-y-2">
         {/* About Section */}
         {(profile.description || profile.bio) && (
-          <div className="bg-white rounded-lg border p-6">
+          <div className="bg-white p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
               <User className="h-5 w-5 text-blue-600" />
               About {isWorker ? 'Me' : 'Us'}
@@ -28,7 +28,7 @@ export default function OverviewTab({ profile, isOwnProfile = false }: OverviewT
 
         {/* Skills & Services Section */}
         {(profile.skills?.length > 0 || profile.services?.length > 0) && (
-          <div className="bg-white rounded-lg border p-6">
+          <div className="bg-white p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
               <Award className="h-5 w-5 text-blue-600" />
               {isWorker ? 'Skills & Services' : 'Services Needed'}
@@ -64,7 +64,7 @@ export default function OverviewTab({ profile, isOwnProfile = false }: OverviewT
 
         {/* Experience & Education */}
         {isWorker && (profile.experience || profile.education || profile.certifications?.length > 0) && (
-          <div className="bg-white rounded-lg border p-6">
+          <div className="bg-white p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
               <Briefcase className="h-5 w-5 text-blue-600" />
               Professional Background
@@ -110,9 +110,9 @@ export default function OverviewTab({ profile, isOwnProfile = false }: OverviewT
       </div>
 
       {/* Sidebar */}
-      <div className="space-y-6">
+      <div className="space-y-2 border-l border-gray-200 pl-2">
         {/* Verification Status */}
-        <div className="bg-white rounded-lg border p-6">
+        <div className="bg-white p-6">
           <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
             <Shield className="h-5 w-5 text-blue-600" />
             Verification
@@ -141,7 +141,7 @@ export default function OverviewTab({ profile, isOwnProfile = false }: OverviewT
               </>
             )}
             
-            <div className="mt-3 pt-3 border-t">
+            <div className="mt-3 pt-3">
               <div className="text-xs text-gray-500 mb-2">Verification Level</div>
               <div className="flex items-center gap-2">
                 <div className="flex-1 bg-gray-200 rounded-full h-2">
@@ -160,7 +160,7 @@ export default function OverviewTab({ profile, isOwnProfile = false }: OverviewT
 
         {/* Work Details */}
         {isWorker && (
-          <div className="bg-white rounded-lg border p-6">
+          <div className="bg-white p-6">
             <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
               <Clock className="h-5 w-5 text-blue-600" />
               Work Details
@@ -197,7 +197,7 @@ export default function OverviewTab({ profile, isOwnProfile = false }: OverviewT
         )}
 
         {/* Stats Section */}
-        <div className="bg-white rounded-lg border p-6">
+        <div className="bg-white p-6">
           <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
             <TrendingUp className="h-5 w-5 text-blue-600" />
             Performance

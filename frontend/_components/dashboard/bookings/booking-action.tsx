@@ -40,12 +40,6 @@ const workerActions = {
     icon: PauseCircle,
     color: 'bg-yellow-500 hover:bg-yellow-600'
   },
-  completeWork: {
-    label: 'Complete Work',
-    description: 'Mark job as finished',
-    icon: CheckCircle,
-    color: 'bg-green-500 hover:bg-green-600'
-  },
   reportIssue: {
     label: 'Report Issue',
     description: 'Report a problem with the job',
@@ -81,18 +75,14 @@ export const BookingActions: React.FC<BookingActionsProps> = ({
     switch (booking.status) {
       case 'active':
         actions.push(
-          {
-            ...workerActions.completeWork,
-            action: () => onShowCompletion()
-          },
-          {
-            ...workerActions.pauseWork,
-            action: () => onPauseWork(booking.id)
-          },
-          {
-            ...workerActions.reportIssue,
-            action: () => onShowIssue()
-          },
+          // {
+          //   ...workerActions.pauseWork,
+          //   action: () => onPauseWork(booking.id)
+          // },
+          // {
+          //   ...workerActions.reportIssue,
+          //   action: () => onShowIssue()
+          // },
           {
             ...workerActions.requestPayment,
             action: () => onRequestPayment(booking.id)
@@ -101,12 +91,10 @@ export const BookingActions: React.FC<BookingActionsProps> = ({
         break;
         
       case 'completed':
-        if (booking.milestone_payments?.some(p => p.status === 'pending')) {
           actions.push({
             ...workerActions.requestPayment,
             action: () => onRequestPayment(booking.id)
           });
-        }
         break;
     }
     

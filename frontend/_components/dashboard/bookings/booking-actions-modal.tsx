@@ -115,13 +115,13 @@ export const BookingActionsModal: React.FC<BookingActionsModalProps> = ({
             action: handleMarkComplete,
             variant: 'success',
           },
-          {
-            label: 'Report Issue',
-            description: 'Report a problem with the work',
-            icon: AlertTriangle,
-            action: () => handleStatusUpdate('disputed'),
-            variant: 'warning',
-          },
+          // {
+          //   label: 'Report Issue',
+          //   description: 'Report a problem with the work',
+          //   icon: AlertTriangle,
+          //   action: () => handleStatusUpdate('disputed'),
+          //   variant: 'warning',
+          // },
           {
             label: 'Cancel Booking',
             description: 'Cancel this booking with a reason',

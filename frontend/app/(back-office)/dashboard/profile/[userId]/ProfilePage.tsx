@@ -5,12 +5,11 @@ import { usePublicProfile } from '@/lib/hooks/usePublicProfile';
 
 import ProfileNavigation from '@/_components/profile/ProfileNavigation';
 import OverviewTab from '@/_components/profile/tabs/OverviewTab';
-import ActivityTab from '@/_components/profile/tabs/ActivityTab';
-import ReviewsTab from '@/_components/profile/tabs/ReviewsTab';
 import PortfolioTab from '@/_components/profile/tabs/PortfolioTab';
 import LoadingState from '@/_components/profile/LoadingState';
 import ErrorState from '@/_components/profile/ErrorState';
 import ProfileHeader from '@/_components/profile/ProfileHeader';
+import ReviewsTab from '@/_components/profile/tabs/ReviewsTab';
 
 interface ProfilePageProps {
   userId: string;
@@ -30,9 +29,9 @@ export default function ProfilePage({ userId, isOwnProfile = false }: ProfilePag
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen">
       {/* Navigation Header */}
-      <div className="bg-white border-b">
+      <div className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center gap-4">
             <a 
@@ -53,7 +52,7 @@ export default function ProfilePage({ userId, isOwnProfile = false }: ProfilePag
       </div>
 
       {/* Profile Header Section */}
-      <div className="bg-white border-b">
+      <div className="bg-white">
         <div className="max-w-7xl mx-auto px-4 py-8">
           <ProfileHeader profile={profile} isOwnProfile={isOwnProfile} />
           <ProfileNavigation activeTab={activeTab} onTabChange={setActiveTab} />
@@ -61,13 +60,13 @@ export default function ProfilePage({ userId, isOwnProfile = false }: ProfilePag
       </div>
 
       {/* Content Section */}
-      <div className="max-w-7xl mx-auto px-4 py-8">
+      <div className="max-w-7xl mx-auto px-2">
         {activeTab === 'overview' && (
           <OverviewTab profile={profile} isOwnProfile={isOwnProfile} />
         )}
-        {activeTab === 'activity' && (
+        {/* {activeTab === 'activity' && (
           <ActivityTab profile={profile} isOwnProfile={isOwnProfile} />
-        )}
+        )} */}
         {activeTab === 'reviews' && (
           <ReviewsTab profile={profile} isOwnProfile={isOwnProfile} />
         )}

@@ -3,14 +3,7 @@
 import React, { useState } from 'react';
 import { 
   Briefcase, 
-  Filter, 
   Search,
-  MoreVertical,
-  Calendar,
-  User,
-  DollarSign,
-  Clock,
-  MapPin
 } from 'lucide-react';
 import { useBookings } from '@/lib/hooks/useBookings';
 import { Booking, BookingStatus } from '@/lib/types/booking';

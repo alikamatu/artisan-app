@@ -38,13 +38,6 @@ export const BookingStats: React.FC<BookingStatsProps> = ({ bookings }) => {
       description: 'Ready to start',
     },
     {
-      label: 'In Progress',
-      value: stats.inProgress,
-      icon: AlertCircle,
-      color: 'bg-orange-500',
-      description: 'Work ongoing',
-    },
-    {
       label: 'Completed',
       value: stats.completed,
       icon: CheckCircle,
@@ -57,14 +50,7 @@ export const BookingStats: React.FC<BookingStatsProps> = ({ bookings }) => {
       icon: XCircle,
       color: 'bg-red-500',
       description: 'Cancelled bookings',
-    },
-    {
-      label: 'Total Revenue',
-      value: `GHS ${totalRevenue.toLocaleString()}`,
-      icon: TrendingUp,
-      color: 'bg-purple-500',
-      description: 'From completed jobs',
-    },
+    }
   ];
 
   return (

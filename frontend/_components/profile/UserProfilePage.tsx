@@ -9,7 +9,6 @@ import ErrorState from './ErrorState';
 import ProfileHeader from './ProfileHeader';
 import ProfileNavigation from './ProfileNavigation';
 import OverviewTab from './tabs/OverviewTab';
-import ActivityTab from './tabs/ActivityTab';
 import ReviewsTab from './tabs/ReviewsTab';
 import PortfolioTab from './tabs/PortfolioTab';
 import { EditProfileDialog } from './EditProfileDialog'
@@ -36,7 +35,7 @@ export default function ProfilePage({ isOwnProfile = false, userId }: ProfilePag
 
   if (!profile) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center max-w-md mx-auto p-6 bg-white rounded-lg border">
           <h3 className="text-lg font-semibold text-gray-900 mb-2">Profile Not Found</h3>
           <p className="text-gray-600">Unable to load profile information.</p>
@@ -46,9 +45,9 @@ export default function ProfilePage({ isOwnProfile = false, userId }: ProfilePag
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen">
       {/* Navigation Header */}
-      <div className="bg-white border-b">
+      <div className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -60,8 +59,8 @@ export default function ProfilePage({ isOwnProfile = false, userId }: ProfilePag
                   {isOwnProfile ? "← Dashboard" : "← Back"}
                 </span>
               </Link>
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <Link href="/" className="hover:text-blue-600 transition-colors">
+              <div className="hidden md:flex items-center gap-2 text-sm text-gray-600">
+                <Link href="/dashboard" className="hover:text-blue-600 transition-colors">
                   Home
                 </Link>
                 <span>/</span>
@@ -95,7 +94,7 @@ export default function ProfilePage({ isOwnProfile = false, userId }: ProfilePag
       </div>
 
       {/* Profile Header Section */}
-      <div className="bg-white border-b">
+      <div className="bg-white">
         <div className="max-w-7xl mx-auto px-4 py-8">
           <ProfileHeader 
             profile={profile} 
@@ -109,13 +108,13 @@ export default function ProfilePage({ isOwnProfile = false, userId }: ProfilePag
       </div>
 
       {/* Content Section */}
-      <div className="max-w-7xl mx-auto px-4 py-8">
+      <div className="max-w-7xl mx-auto px-2">
         {activeTab === 'overview' && (
           <OverviewTab profile={profile} isOwnProfile={isOwnProfile} />
         )}
-        {activeTab === 'activity' && (
+        {/* {activeTab === 'activity' && (
           <ActivityTab profile={profile} isOwnProfile={isOwnProfile} />
-        )}
+        )} */}
         {activeTab === 'reviews' && (
           <ReviewsTab profile={profile} isOwnProfile={isOwnProfile} />
         )}

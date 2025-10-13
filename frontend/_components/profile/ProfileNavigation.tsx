@@ -1,21 +1,21 @@
 import React from 'react';
-import { User, TrendingUp, Star, Briefcase } from 'lucide-react';
+import { User, Star, Briefcase } from 'lucide-react';
 
 interface ProfileNavigationProps {
   activeTab: string;
-  onTabChange: (tab: 'overview' | 'reviews' | 'portfolio' | 'activity') => void;
+  onTabChange: (tab: 'overview' | 'reviews' | 'portfolio') => void;
 }
 
 export default function ProfileNavigation({ activeTab, onTabChange }: ProfileNavigationProps) {
   const tabs = [
     { id: 'overview', label: 'Overview', icon: User },
-    { id: 'activity', label: 'Activity', icon: TrendingUp },
+    // { id: 'activity', label: 'Activity', icon: TrendingUp },
     { id: 'reviews', label: 'Reviews', icon: Star },
     { id: 'portfolio', label: 'Portfolio', icon: Briefcase }
   ] as const;
 
   return (
-    <div className="bg-white border-b">
+    <div className="bg-white border-b border-gray-200">
       <div className="max-w-7xl mx-auto px-4">
         <nav className="flex space-x-8">
           {tabs.map(({ id, label, icon: Icon }) => (

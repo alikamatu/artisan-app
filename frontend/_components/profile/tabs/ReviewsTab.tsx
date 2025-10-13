@@ -66,7 +66,7 @@ export default function ReviewsTab({ profile, isOwnProfile = false }: ReviewsTab
   return (
     <div className="space-y-6">
       {/* Reviews Summary */}
-      <div className="bg-white rounded-lg border p-6">
+      <div className="bg-white">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8">
           <div className="text-center lg:text-left">
             <div className="text-5xl font-bold text-gray-900 mb-2">{averageRating}</div>

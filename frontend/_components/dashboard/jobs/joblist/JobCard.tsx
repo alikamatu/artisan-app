@@ -127,7 +127,11 @@ const JobCard = memo(({
 
       {/* Description */}
       <p className="text-gray-700 mb-4 line-clamp-3 text-sm leading-relaxed text-balance">
-        {job.description}
+        {job.description
+          ?.split(' ')
+          .slice(0, 7)
+          .join(' ')
+          .concat(job.description.split(' ').length > 7 ? '…' : '')}
       </p>
 
       {/* Budget and Stats */}
@@ -142,10 +146,10 @@ const JobCard = memo(({
             {job.estimated_duration}
           </div>
         )}
-        <div className="flex items-center gap-1">
+        {/* <div className="flex items-center gap-1">
           <Eye className="h-4 w-4" />
           {job.views_count.toLocaleString()} views
-        </div>
+        </div> */}
         <div className="flex items-center gap-1">
           <Users className="h-4 w-4" />
           {job.applications_count} applied
@@ -155,7 +159,7 @@ const JobCard = memo(({
       {/* Skills */}
       {job.required_skills && job.required_skills.length > 0 && (
         <div className="flex flex-wrap gap-2 mb-4">
-          {job.required_skills.slice(0, 4).map((skill: string, index: number) => (
+          {job.required_skills.slice(0, 3).map((skill: string, index: number) => (
             <span
               key={index}
               className="px-3 py-1.5 bg-blue-50 text-blue-700 rounded-full text-xs font-medium border border-blue-200 whitespace-nowrap"
