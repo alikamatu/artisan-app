@@ -98,13 +98,17 @@ const CategorySelector: React.FC<CategorySelectorProps> = ({
             </div>
             <div className="flex items-center gap-2">
               {selectedCategory && !disabled && (
-                <button
-                  type="button"
-                  onClick={clearSelection}
-                  className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
+                <span
+                  role="button"
+                  tabIndex={0}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    clearSelection(e);
+                  }}
+                  className="p-1 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
                 >
                   <X className="h-4 w-4" />
-                </button>
+                </span>
               )}
               {!disabled && (
                 isOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />

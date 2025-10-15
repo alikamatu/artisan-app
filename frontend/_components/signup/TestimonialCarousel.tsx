@@ -7,26 +7,26 @@ import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 
 const backgrounds = [
-  'https://picsum.photos/800/600?random=1',
-  'https://picsum.photos/800/600?random=2',
-  'https://picsum.photos/800/600?random=3',
+  '/signup/2147842924.jpg',
+  '/signup/2147842924.jpg',
+  '/signup/2147842924.jpg',
 ];
 
 const testimonials = [
   {
     quote: 'This platform changed my life! Highly recommend.',
     name: 'John Doe',
-    avatar: 'https://i.pravatar.cc/150?img=1',
+    avatar: '/signup/2147842924.jpg',
   },
   {
     quote: 'Amazing user experience and great support.',
     name: 'Jane Smith',
-    avatar: 'https://i.pravatar.cc/150?img=2',
+    avatar: '/signup/2147842924.jpg',
   },
   {
     quote: 'The best sign-up process I\'ve ever seen.',
     name: 'Alex Johnson',
-    avatar: 'https://i.pravatar.cc/150?img=3',
+    avatar: '/signup/2147842924.jpg',
   },
 ];
 

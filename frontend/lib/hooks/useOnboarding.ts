@@ -251,60 +251,66 @@ export const useOnboarding = () => {
     }
   }, [fetchStatus]);
 
-  const uploadFile = useCallback(async (file: File): Promise<string | null> => {
-    setSubmitting(true);
-    setError(null);
+const uploadFile = useCallback(async (file: File): Promise<string | null> => {
+  setSubmitting(true);
+  setError(null);
 
-    try {
-      const token = await getValidToken();
+  let objectUrl: string | null = null;
+
+  try {
+    const token = await getValidToken();
+    
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    let fileToUpload = file;
+
+    // Add more specific image type checking
+    if (file.type.startsWith('image/')) {
+      console.log(`Original file size: ${formatFileSize(file.size)}, compressing...`);
       
-      if (!token) {
-        throw new Error('No authentication token found');
+      // Check file size before attempting compression
+      if (file.size > 10 * 1024 * 1024) { // 10MB
+        throw new Error('Image is too large. Please use an image smaller than 10MB.');
       }
 
-      let fileToUpload = file;
-
-      // Compress image if it's an image file and larger than 500KB
-      if (file.type.startsWith('image/') && file.size > 500 * 1024) {
-        console.log(`Original file size: ${formatFileSize(file.size)}, compressing...`);
-        
-        try {
-          fileToUpload = await compressImage(file, {
-            maxWidth: 1200,
-            maxHeight: 1200,
-            quality: 0.8,
-            maxSizeKB: 500
-          });
-          console.log(`Compressed file size: ${formatFileSize(fileToUpload.size)}`);
-        } catch (compressionError: any) {
-          console.warn('Image compression failed:', compressionError);
-          // Continue with original file if compression fails
-          if (file.size > 2 * 1024 * 1024) { // 2MB limit
-            throw new Error('Image is too large. Please use an image smaller than 2MB.');
-          }
+      try {
+        fileToUpload = await compressImage(file, {
+          maxWidth: 800, // Reduced from 1200 for better performance
+          maxHeight: 800,
+          quality: 0.7,  // Slightly lower quality for faster processing
+          maxSizeKB: 300 // Reduced from 500
+        });
+        console.log(`Compressed file size: ${formatFileSize(fileToUpload.size)}`);
+      } catch (compressionError: any) {
+        console.warn('Image compression failed:', compressionError);
+        if (file.size > 2 * 1024 * 1024) {
+          throw new Error('Image is too large. Please use an image smaller than 2MB.');
         }
       }
+    }
 
       // Additional size check
-      if (fileToUpload.size > 5 * 1024 * 1024) { // 5MB hard limit
-        throw new Error('File is too large. Maximum file size is 5MB.');
+if (fileToUpload.size > 5 * 1024 * 1024) {
+      throw new Error('File is too large. Maximum file size is 5MB.');
+    }
+
+    const formData = new FormData();
+    formData.append('file', fileToUpload);
+
+    console.log(`Uploading file: ${fileToUpload.name} (${formatFileSize(fileToUpload.size)})`);
+
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/onboarding/upload`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+        body: formData,
       }
-
-      const formData = new FormData();
-      formData.append('file', fileToUpload);
-
-      console.log(`Uploading file: ${fileToUpload.name} (${formatFileSize(fileToUpload.size)})`);
-
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/onboarding/upload`,
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-          body: formData,
-        }
-      );
+    );
 
       if (response.status === 401) {
         localStorage.removeItem('access_token');

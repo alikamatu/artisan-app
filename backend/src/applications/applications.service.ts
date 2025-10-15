@@ -46,6 +46,7 @@ export interface ApplicationResponse {
     first_name?: string | null;
     last_name?: string | null;
     display_name?: string;
+    serviceArea?: string;
     verification_status?: 'verified' | 'unverified';
     location?: {
       region: string;
@@ -688,6 +689,7 @@ export class ApplicationsService {
         skills: workerMetadata.professional?.skills || [],
         profile_photo: profile.photo || null,
         first_name: profile.firstName || null,
+        serviceArea: workerMetadata.pricing?.service_area || null,
         last_name: profile.lastName || null,
         display_name: profile.firstName && profile.lastName 
           ? `${profile.firstName} ${profile.lastName}`

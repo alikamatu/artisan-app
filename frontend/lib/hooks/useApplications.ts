@@ -69,30 +69,50 @@ const applicationsApi = {
   },
 
   // Get worker's applications
-  async getMyApplications(filters: ApplicationFilters = {}): Promise<ApplicationListResponse> {
-    const params = new URLSearchParams();
-    
-    Object.entries(filters).forEach(([key, value]) => {
-      if (value !== undefined && value !== null && value !== '') {
-        if (Array.isArray(value)) {
-          value.forEach(v => params.append(key, v.toString()));
-        } else {
-          params.append(key, value.toString());
-        }
+// In your useApplications.ts file, update the getMyApplications function
+async getMyApplications(filters: ApplicationFilters = {}): Promise<ApplicationListResponse> {
+  console.log('🔍 Getting worker applications with filters:', filters);
+  
+  const params = new URLSearchParams();
+  
+  Object.entries(filters).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== '') {
+      if (Array.isArray(value)) {
+        value.forEach(v => params.append(key, v.toString()));
+      } else {
+        params.append(key, value.toString());
       }
-    });
-
-    const response = await fetch(`${API_CONFIG.baseURL}/applications/my-applications?${params}`, {
-      headers: getAuthHeaders()
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || `Failed to fetch applications: ${response.status}`);
     }
+  });
 
-    return response.json();
-  },
+  console.log('🌐 API URL:', `${API_CONFIG.baseURL}/applications/my-applications?${params}`);
+  console.log('📋 Request headers:', getAuthHeaders());
+
+  const response = await fetch(`${API_CONFIG.baseURL}/applications/my-applications?${params}`, {
+    headers: getAuthHeaders()
+  });
+
+  console.log('📡 Response status:', response.status);
+  console.log('📡 Response ok:', response.ok);
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error('❌ Error response text:', errorText);
+    
+    let errorData;
+    try {
+      errorData = JSON.parse(errorText);
+    } catch {
+      errorData = { message: errorText || 'Unknown error' };
+    }
+    
+    throw new Error(errorData.message || `Failed to fetch applications: ${response.status}`);
+  }
+
+  const data = await response.json();
+  console.log('✅ Applications data:', data);
+  return data;
+},
 
   // Get applications for a job (client only)
   async getJobApplications(jobId: string, filters: ApplicationFilters = {}): Promise<ApplicationListResponse> {
@@ -335,6 +355,7 @@ export const useClientApplications = (filters: ApplicationFilters = {}) => {
   };
 };
 
+// lib/hooks/useApplications.ts - Updated useMyApplications hook
 export const useMyApplications = (filters: ApplicationFilters = {}) => {
   const [applications, setApplications] = useState<JobApplication[]>([]);
   const [total, setTotal] = useState(0);
@@ -349,14 +370,20 @@ export const useMyApplications = (filters: ApplicationFilters = {}) => {
     setError(null);
     
     try {
+      console.log('🔄 Fetching worker applications with filters:', filters);
+      
       const response = await applicationsApi.getMyApplications(filters);
-      setApplications(response.applications);
-      setTotal(response.total);
-      setPage(response.page);
-      setLimit(response.limit);
-      setTotalPages(response.totalPages);
+      console.log('✅ Worker applications response:', response);
+      
+      setApplications(response.applications || []);
+      setTotal(response.total || 0);
+      setPage(response.page || 1);
+      setLimit(response.limit || 10);
+      setTotalPages(response.totalPages || 0);
     } catch (err) {
-      setError(handleApiError(err));
+      console.error('❌ Error fetching worker applications:', err);
+      const errorMessage = handleApiError(err);
+      setError(errorMessage);
       setApplications([]);
       setTotal(0);
       setTotalPages(0);

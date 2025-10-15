@@ -105,8 +105,8 @@ export default function DashboardPage() {
           totalJobs: jobs.length,
           activeJobs: jobs.filter((job: any) => job.status === 'open' || job.status === 'in_progress').length,
           completedJobs: jobs.filter((job: any) => job.status === 'completed').length,
-          totalEarnings: 0, // This would come from completed transactions
-          averageRating: 4.2, // This would come from reviews
+          totalEarnings: 0, 
+          averageRating: 4.2,
           totalViews: jobs.reduce((sum: number, job: any) => sum + (job.views_count || 0), 0)
         };
         setStats(stats);
@@ -116,7 +116,6 @@ export default function DashboardPage() {
     }
   };
 
-  // Add this helper function at the top of your dashboard component
 const formatLocationDisplay = (location: any) => {
   if (!location) return 'Location not specified';
   
@@ -268,14 +267,14 @@ const formatLocationDisplay = (location: any) => {
                   className="flex items-center gap-3 p-4 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
                 >
                   <Users className="h-5 w-5" />
-                  <span className="font-medium">My Applications</span>
+                  <span className="font-medium">My Works</span>
                 </button>
                 <button
-                  onClick={() => router.push('/dashboard/contracts')}
+                  onClick={() => router.push('/dashboard/worker-applications')}
                   className="flex items-center gap-3 p-4 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
                 >
                   <Clock className="h-5 w-5" />
-                  <span className="font-medium">Active Contracts</span>
+                  <span className="font-medium">My Applications</span>
                 </button>
                 <button
                   onClick={() => router.push('/dashboard/profile')}

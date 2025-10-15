@@ -42,6 +42,7 @@ export interface JobApplication {
     total_jobs_completed?: number;
     skills?: string[];
     profile_photo?: string | null;
+    serviceArea?: string;
     first_name?: string | null;
     last_name?: string | null;
     display_name?: string;
@@ -56,6 +57,19 @@ export interface JobApplication {
     id: string;
     title: string;
     budget_min: number;
+    category: string;
+    description: string;
+    location: {
+      region: string;
+      city: string;
+    };
+    created_at: string;
+    updated_at: string;
+    client: {
+      id: string;
+      name: string;
+      profile_photo?: string | null;
+    };
     budget_max: number;
     status: string;
   };

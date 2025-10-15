@@ -42,9 +42,6 @@ export const JobApplicationsView: React.FC<JobApplicationsViewProps> = ({
 
   const {
     applications,
-    total,
-    page,
-    totalPages,
     isLoading,
     error,
     refetch

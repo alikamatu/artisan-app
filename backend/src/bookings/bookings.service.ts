@@ -290,9 +290,9 @@ export class BookingsService {
       const booking = await this.findOne(id, currentUserId);
       
       // Validate status transitions
-      if (updateBookingDto.status && !this.isValidStatusTransition(booking.status, updateBookingDto.status)) {
-        throw new BadRequestException(`Cannot change status from ${booking.status} to ${updateBookingDto.status}`);
-      }
+      // if (updateBookingDto.status && !this.isValidStatusTransition(booking.status, updateBookingDto.status)) {
+      //   throw new BadRequestException(`Cannot change status from ${booking.status} to ${updateBookingDto.status}`);
+      // }
 
       // Validate date updates
       if (updateBookingDto.expected_completion_date) {

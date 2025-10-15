@@ -14,7 +14,7 @@ interface ApplicationCardProps {
   onAccept: (id: string) => void;
   onShowRejectModal: (id: string) => void;
   onShowBookingModal: (id: string) => void;
-  onStatusUpdate: () => void; // Add this prop
+  onStatusUpdate: () => void; 
 }
 
 export const ApplicationCard: React.FC<ApplicationCardProps> = ({
@@ -25,7 +25,7 @@ export const ApplicationCard: React.FC<ApplicationCardProps> = ({
   onAccept,
   onShowRejectModal,
   onShowBookingModal,
-  onStatusUpdate // Add this prop
+  onStatusUpdate
 }) => {
   const statusColors = {
     [ApplicationStatus.PENDING]: 'bg-yellow-100 text-yellow-800',
@@ -133,7 +133,7 @@ export const ApplicationCard: React.FC<ApplicationCardProps> = ({
                   <div className="flex justify-between">
                     <span className="text-gray-600">Location:</span>
                     <span className="font-medium">
-                      {application.worker.location?.city}, {application.worker.location?.region}
+                      {application.worker.serviceArea}
                     </span>
                   </div>
                 </div>
@@ -165,7 +165,7 @@ export const ApplicationCard: React.FC<ApplicationCardProps> = ({
             onAccept={onAccept}
             onReject={onShowRejectModal}
             onShowBookingModal={onShowBookingModal}
-            onStatusUpdate={onStatusUpdate} // Pass the prop here
+            onStatusUpdate={onStatusUpdate}
           />
         </div>
       )}

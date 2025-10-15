@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { 
   Box, TextField, Button, Typography, Avatar, Grid, 
   useTheme, Alert, CircularProgress, LinearProgress 
@@ -23,12 +23,22 @@ const ClientProfileSetup = ({ onSubmit, initialData }: ClientProfileSetupProps) 
     lastName: '',
     email: '',
     phone: '',
-    photo: null as string | null, // Store URL, not File
+    photo: null as string | null,
   });
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Clean up object URLs on unmount
+  useEffect(() => {
+    return () => {
+      if (photoPreview && photoPreview.startsWith('blob:')) {
+        URL.revokeObjectURL(photoPreview);
+      }
+    };
+  }, []);
 
   // Load initial data
   useEffect(() => {
@@ -92,6 +102,7 @@ const ClientProfileSetup = ({ onSubmit, initialData }: ClientProfileSetupProps) 
       // Validate file type
       if (!file.type.startsWith('image/')) {
         setErrors({ ...errors, photo: 'Please select an image file' });
+        e.target.value = ''; // Reset input
         return;
       }
 
@@ -101,6 +112,7 @@ const ClientProfileSetup = ({ onSubmit, initialData }: ClientProfileSetupProps) 
       // Warn for very large files
       if (file.size > 5 * 1024 * 1024) {
         setErrors({ ...errors, photo: 'Image must be less than 5MB. Very large images may fail to upload.' });
+        e.target.value = ''; // Reset input
         return;
       }
 
@@ -109,10 +121,19 @@ const ClientProfileSetup = ({ onSubmit, initialData }: ClientProfileSetupProps) 
         setErrors({ ...errors, photo: '' });
       }
 
-      // Create preview immediately
+      // Clean up previous preview if it was a blob URL
+      if (photoPreview && photoPreview.startsWith('blob:')) {
+        URL.revokeObjectURL(photoPreview);
+      }
+
+      // Create preview using FileReader (safer than createObjectURL)
       const reader = new FileReader();
       reader.onload = () => {
         setPhotoPreview(reader.result as string);
+      };
+      reader.onerror = () => {
+        setErrors({ ...errors, photo: 'Failed to load image preview' });
+        setUploadingPhoto(false);
       };
       reader.readAsDataURL(file);
 
@@ -139,7 +160,8 @@ const ClientProfileSetup = ({ onSubmit, initialData }: ClientProfileSetupProps) 
         setTimeout(() => setUploadProgress(0), 1000);
         
         if (uploadedUrl) {
-          setFormData({ ...formData, photo: uploadedUrl });
+          setFormData(prev => ({ ...prev, photo: uploadedUrl }));
+          // Keep the uploaded URL as preview, not the local blob
           setPhotoPreview(uploadedUrl);
         } else {
           throw new Error('Failed to upload image');
@@ -152,6 +174,7 @@ const ClientProfileSetup = ({ onSubmit, initialData }: ClientProfileSetupProps) 
       } finally {
         clearInterval(progressInterval);
         setUploadingPhoto(false);
+        e.target.value = ''; // Reset input
       }
     }
   };
@@ -164,7 +187,7 @@ const ClientProfileSetup = ({ onSubmit, initialData }: ClientProfileSetupProps) 
     }
 
     try {
-      onSubmit(formData);
+      await onSubmit(formData);
     } catch (error: any) {
       setErrors({ submit: error.message || 'An error occurred. Please try again.' });
     }
@@ -203,6 +226,7 @@ const ClientProfileSetup = ({ onSubmit, initialData }: ClientProfileSetupProps) 
               type="file"
               onChange={handlePhotoChange}
               disabled={uploadingPhoto}
+              ref={fileInputRef}
             />
             <label htmlFor="profile-photo-upload">
               <Avatar

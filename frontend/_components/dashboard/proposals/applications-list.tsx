@@ -1,4 +1,3 @@
-// components/applications-list.tsx
 "use client";
 
 import React from 'react';
@@ -15,7 +14,7 @@ interface ApplicationsListProps {
   onAccept: (id: string) => void;
   onShowRejectModal: (id: string) => void;
   onShowBookingModal: (id: string) => void;
-  onStatusUpdate: () => void; // Add this prop
+  onStatusUpdate: () => void;
   isLoading: boolean;
   error: string | null;
   onRetry: () => void;
@@ -30,7 +29,7 @@ export const ApplicationsList: React.FC<ApplicationsListProps> = ({
   onAccept,
   onShowRejectModal,
   onShowBookingModal,
-  onStatusUpdate, // Add this prop
+  onStatusUpdate,
   isLoading,
   error,
   onRetry
@@ -102,7 +101,7 @@ export const ApplicationsList: React.FC<ApplicationsListProps> = ({
           onAccept={onAccept}
           onShowRejectModal={onShowRejectModal}
           onShowBookingModal={onShowBookingModal}
-          onStatusUpdate={onStatusUpdate} // Pass the prop here
+          onStatusUpdate={onStatusUpdate}
         />
       ))}
     </div>

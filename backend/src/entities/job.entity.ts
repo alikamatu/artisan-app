@@ -6,6 +6,7 @@ import { JobApplication } from './job-application.entity';
 export enum JobStatus {
   OPEN = 'open',
   IN_PROGRESS = 'in_progress',
+  ACTIVE = 'active',
   COMPLETED = 'completed',
   CANCELLED = 'cancelled'
 }
@@ -13,6 +14,7 @@ export enum JobStatus {
 export enum JobCurrentStatus {
   OPEN = 'open',
   PROPOSED = 'proposed',
+  ACTIVE = 'active',
   ACCEPTED = 'accepted',
   IN_PROGRESS = 'in_progress',
   COMPLETED = 'completed',

@@ -111,6 +111,10 @@ export class CreateJobDto {
   })
   budget_max: number;
 
+  @IsEnum(GhanaRegion, { each: true, message: 'Region must be a valid Ghana region' })
+  @IsOptional()
+  region: GhanaRegion[];
+
   @IsArray()
   @IsOptional()
   @IsString({ each: true })

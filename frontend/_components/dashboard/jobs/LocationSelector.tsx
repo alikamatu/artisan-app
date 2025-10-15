@@ -142,15 +142,19 @@ const LocationSelector: React.FC<LocationSelectorProps> = ({
                 {selectedRegionInfo ? selectedRegionInfo.name : 'Select region'}
               </span>
               <div className="flex items-center gap-2">
-                {selectedRegionInfo && !disabled && (
-                  <button
-                    type="button"
-                    onClick={clearRegion}
-                    className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                )}
+                  {selectedRegionInfo && !disabled && (
+                    <span
+                      role="button"
+                      tabIndex={0}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        clearRegion(e);
+                      }}
+                      className="p-1 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
+                    >
+                      <X className="h-4 w-4" />
+                    </span>
+                  )}
                 {!disabled && (
                   isRegionOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />
                 )}
@@ -223,13 +227,17 @@ const LocationSelector: React.FC<LocationSelectorProps> = ({
               </span>
               <div className="flex items-center gap-2">
                 {value.city && !disabled && selectedRegionInfo && (
-                  <button
-                    type="button"
-                    onClick={clearCity}
-                    className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
+                  <span
+                    role="button"
+                    tabIndex={0}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      clearCity(e);
+                    }}
+                    className="p-1 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
                   >
                     <X className="h-4 w-4" />
-                  </button>
+                  </span>
                 )}
                 {!disabled && selectedRegionInfo && (
                   isCityOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />

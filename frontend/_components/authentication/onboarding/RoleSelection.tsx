@@ -1,7 +1,9 @@
 "use client";
 
-import { Card, CardContent, Typography, Button, Grid, Box, useTheme } from '@mui/material';
+import { Card, CardContent, Typography, Button, Box, useTheme, alpha } from '@mui/material';
 import { motion } from 'framer-motion';
+import { Building2, UserCheck, ArrowRight } from 'lucide-react';
+import { useState } from 'react';
 
 type RoleSelectionProps = {
   onSelect: (role: 'client' | 'worker') => void;
@@ -9,95 +11,169 @@ type RoleSelectionProps = {
 
 const RoleSelection = ({ onSelect }: RoleSelectionProps) => {
   const theme = useTheme();
+  const [selectedRole, setSelectedRole] = useState<'client' | 'worker' | null>(null);
+
+  const handleRoleSelect = (role: 'client' | 'worker') => {
+    setSelectedRole(role);
+    setTimeout(() => onSelect(role), 300);
+  };
+
+  const roles = [
+    {
+      id: 'client',
+      title: "I'm a Client",
+      description: "Hire skilled professionals",
+      icon: Building2,
+      color: '#1a73e8',
+      buttonText: "Continue as Client"
+    },
+    {
+      id: 'worker',
+      title: "I'm a Worker", 
+      description: "Offer professional services",
+      icon: UserCheck,
+      color: '#34a853',
+      buttonText: "Continue as Worker"
+    }
+  ];
 
   return (
-    <Box sx={{ mt: 4 }}>
-      <Typography variant="h6" align="center" gutterBottom>
-        Select your account type
-      </Typography>
-      <Typography variant="body2" color="textSecondary" align="center" sx={{ mb: 4 }}>
-        Choose how you want to use our platform
-      </Typography>
+    <Box
+      sx={{
+        padding: 3,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}
+    >
+      {/* Header */}
+      <Box sx={{ textAlign: 'center', mb: 6 }}>
+        <Typography
+          variant="h4"
+          sx={{
+            fontWeight: 400,
+            color: theme.palette.text.primary,
+            mb: 1
+          }}
+        >
+          Choose your role
+        </Typography>
+        <Typography
+          variant="body1"
+          sx={{
+            color: theme.palette.text.secondary
+          }}
+        >
+          Select how you'd like to use the platform
+        </Typography>
+      </Box>
 
-      <Grid container spacing={4} justifyContent="center">
-        <div className='w-full'>
-          <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.98 }}>
+      {/* Role Cards */}
+      <Box 
+        sx={{ 
+          display: 'grid', 
+          gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
+          gap: 3,
+          maxWidth: 600,
+          width: '100%'
+        }}
+      >
+        {roles.map((role, index) => (
+          <motion.div
+            key={role.id}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.1 }}
+            whileHover={{ y: -2 }}
+          >
             <Card
               sx={{
-                height: '100%',
-                display: 'flex',
-                flexDirection: 'column',
+                borderRadius: 2,
+                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+                border: selectedRole === role.id 
+                  ? `2px solid ${role.color}`
+                  : '1px solid #dadce0',
+                background: 'white',
                 cursor: 'pointer',
-                border: `1px solid ${theme.palette.divider}`,
+                transition: 'all 0.2s ease',
+                '&:hover': {
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                }
               }}
-              onClick={() => onSelect('client')}
+              onClick={() => handleRoleSelect(role.id as 'client' | 'worker')}
             >
-              <CardContent sx={{ flexGrow: 1, textAlign: 'center' }}>
-                <Box sx={{ mb: 2 }}>
-                  <img src="/images/client-icon.svg" alt="Client" width={80} />
+              <CardContent sx={{ p: 4, textAlign: 'center' }}>
+                <Box
+                  sx={{
+                    width: 64,
+                    height: 64,
+                    borderRadius: '50%',
+                    background: role.color,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    mb: 3
+                  }}
+                >
+                  <role.icon size={28} color="white" />
                 </Box>
-                <Typography variant="h6" gutterBottom>
-                  I'm a Client
+                
+                <Typography 
+                  variant="h6" 
+                  sx={{ 
+                    fontWeight: 500,
+                    color: theme.palette.text.primary,
+                    mb: 1
+                  }}
+                >
+                  {role.title}
                 </Typography>
-                <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
-                  Looking to hire skilled professionals
+                
+                <Typography 
+                  variant="body2" 
+                  sx={{ 
+                    color: theme.palette.text.secondary,
+                    mb: 3
+                  }}
+                >
+                  {role.description}
                 </Typography>
-                <Typography variant="caption" component="div">
-                  <ul style={{ textAlign: 'left', paddingLeft: '1rem' }}>
-                    <li>Post jobs and get quotes</li>
-                    <li>Manage bookings and payments</li>
-                    <li>Review worker profiles</li>
-                  </ul>
-                </Typography>
-              </CardContent>
-              <Box sx={{ p: 2, textAlign: 'center' }}>
-                <Button variant="contained" fullWidth>
-                  Continue as Client
-                </Button>
-              </Box>
-            </Card>
-          </motion.div>
-        </div >
 
-        <div className='w-full'>
-          <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.98 }}>
-            <Card
-              sx={{
-                height: '100%',
-                display: 'flex',
-                flexDirection: 'column',
-                cursor: 'pointer',
-                border: `1px solid ${theme.palette.divider}`,
-              }}
-              onClick={() => onSelect('worker')}
-            >
-              <CardContent sx={{ flexGrow: 1, textAlign: 'center' }}>
-                <Box sx={{ mb: 2 }}>
-                  <img src="/images/worker-icon.svg" alt="Worker" width={80} />
-                </Box>
-                <Typography variant="h6" gutterBottom>
-                  I'm a Worker
-                </Typography>
-                <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
-                  Offering professional services
-                </Typography>
-                <Typography variant="caption" component="div">
-                  <ul style={{ textAlign: 'left', paddingLeft: '1rem' }}>
-                    <li>Showcase your skills and portfolio</li>
-                    <li>Get hired for jobs in your area</li>
-                    <li>Manage your schedule and earnings</li>
-                  </ul>
-                </Typography>
-              </CardContent>
-              <Box sx={{ p: 2, textAlign: 'center' }}>
-                <Button variant="outlined" fullWidth>
-                  Continue as Worker
+                <Button
+                  variant={selectedRole === role.id ? "contained" : "outlined"}
+                  fullWidth
+                  sx={{
+                    borderRadius: 1,
+                    borderColor: role.color,
+                    backgroundColor: selectedRole === role.id ? role.color : 'transparent',
+                    color: selectedRole === role.id ? 'white' : role.color,
+                    '&:hover': {
+                      backgroundColor: selectedRole === role.id ? role.color : alpha(role.color, 0.1)
+                    }
+                  }}
+                  endIcon={<ArrowRight size={16} />}
+                >
+                  {role.buttonText}
                 </Button>
-              </Box>
+              </CardContent>
             </Card>
           </motion.div>
-        </div>
-      </Grid>
+        ))}
+      </Box>
+
+      {/* Footer */}
+      <Typography 
+        variant="body2" 
+        sx={{ 
+          textAlign: 'center', 
+          mt: 4,
+          color: theme.palette.text.secondary,
+          maxWidth: 400
+        }}
+      >
+        You can switch between roles in account settings anytime.
+      </Typography>
     </Box>
   );
 };

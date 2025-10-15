@@ -113,7 +113,7 @@ export const BookingCard: React.FC<BookingCardProps> = ({ booking, onActionClick
             <DollarSign className="h-4 w-4" />
             <span className="text-sm">Agreed Budget</span>
           </div>
-          <span className="font-semibold text-gray-900">GHS {booking.agreed_budget}</span>
+          <span className="font-semibold text-gray-900">GHS {booking.final_budget}</span>
         </div>
 
         {/* Timeline */}

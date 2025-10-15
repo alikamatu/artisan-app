@@ -1,13 +1,21 @@
 "use client";
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { MapPin, Star, BadgeCheck } from 'lucide-react';
+import { getDisplayName, getInitials } from '@/helpers/job-helpers';
+import { UserProfileLink } from '@/_components/common/UserProfileLink';
 
 interface WorkerInfoProps {
-  worker: any; // Adjust type based on your worker type
+  worker: any;
 }
 
 export const WorkerInfo: React.FC<WorkerInfoProps> = ({ worker }) => {
+
+  useEffect(() => {
+    console.log(worker);
+    
+  }, [worker]);
+
   if (!worker) {
     return (
       <div className="flex items-center gap-3">
@@ -33,7 +41,8 @@ export const WorkerInfo: React.FC<WorkerInfoProps> = ({ worker }) => {
       ) : (
         <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
           <span className="text-white text-sm font-medium">
-            {worker.display_name?.charAt(0) || worker.name?.charAt(0) || 'W'}
+            kjhrljgkf
+            <UserProfileLink userId={worker.id} userName={getDisplayName(worker)} className="sr-only" />
           </span>
         </div>
       )}
@@ -60,7 +69,7 @@ export const WorkerInfo: React.FC<WorkerInfoProps> = ({ worker }) => {
             <div className="flex items-center gap-1 truncate">
               <MapPin className="h-4 w-4" />
               <span className="truncate">
-                {worker.location.city}, {worker.location.region}
+                {worker.serviceArea}
               </span>
             </div>
           )}

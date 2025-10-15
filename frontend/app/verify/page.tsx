@@ -21,15 +21,14 @@ function VerifyEmailContent() {
   });
   const [isResending, setIsResending] = useState(false);
   const [showResendSuccess, setShowResendSuccess] = useState(false);
+  const [userEmail, setUserEmail] = useState<string>('');
 
   useEffect(() => {
-    const status = searchParams.get('status');
-    const message = searchParams.get('message');
     const token = searchParams.get('token');
+    const email = searchParams.get('email');
 
-    if (status) {
-      handleStatusResponse(status, message);
-      return;
+    if (email) {
+      setUserEmail(email);
     }
 
     if (token) {
@@ -37,36 +36,20 @@ function VerifyEmailContent() {
     } else {
       setVerification({
         status: 'error',
-        message: 'No verification token provided.',
+        message: 'No verification token provided. Please check your email for the complete verification link.',
       });
     }
   }, [searchParams]);
 
-  const handleStatusResponse = (status: string, message: string | null) => {
-    if (status === 'success') {
-      setVerification({
-        status: 'success',
-        message: message || 'Your email has been verified successfully! You can now log in.',
-      });
-    } else if (status === 'error') {
-      const errorMessage = message ? decodeURIComponent(message) : 'Verification failed';
-      const isExpired = errorMessage.toLowerCase().includes('expired');
-
-      setVerification({
-        status: isExpired ? 'expired' : 'error',
-        message: errorMessage,
-      });
-    }
-  };
-
   const verifyToken = async (token: string) => {
     try {
-      // Fixed URL construction - using correct backend route format
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1000';
-      const response = await fetch(`${apiUrl}/auth/verify/${token}`, {
+      
+      // Try the path parameter endpoint first (your current backend setup)
+      let response = await fetch(`${apiUrl}/auth/verify/${token}`, {
         method: 'GET',
         headers: {
-          Accept: 'application/json',
+          'Accept': 'application/json',
         },
       });
 
@@ -74,11 +57,13 @@ function VerifyEmailContent() {
         const data = await response.json();
         setVerification({
           status: 'success',
-          message: data.message || 'Your email has been verified successfully!',
+          message: data.message || 'Your email has been verified successfully! You can now log in to your account.',
         });
+        
+          router.push('/sign-in');
       } else {
         const errorData = await response.json().catch(() => ({}));
-        const errorMessage = errorData.message || 'Verification failed';
+        const errorMessage = errorData.message || 'Verification failed. Please try again.';
         const isExpired = errorMessage.toLowerCase().includes('expired');
 
         setVerification({
@@ -90,18 +75,23 @@ function VerifyEmailContent() {
       console.error('Verification error:', error);
       setVerification({
         status: 'error',
-        message: 'Could not connect to the server. Please try again later.',
+        message: 'Network error: Could not connect to the server. Please check your internet connection and try again.',
       });
     }
   };
 
   const handleResendEmail = async () => {
-    const email = searchParams.get('email') || prompt('Please enter your email address:');
-    if (!email) return;
+    let email = userEmail;
+    
+    if (!email) {
+      email = prompt('Please enter your email address:' ) || '';
+      if (!email) return;
+      setUserEmail(email);
+    }
 
     setIsResending(true);
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1000';
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
       const response = await fetch(`${apiUrl}/auth/resend-verification`, {
         method: 'POST',
         headers: {
@@ -112,16 +102,16 @@ function VerifyEmailContent() {
 
       if (response.ok) {
         setShowResendSuccess(true);
-        setTimeout(() => setShowResendSuccess(false), 3000);
+        setTimeout(() => setShowResendSuccess(false), 5000);
       } else {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || 'Failed to send email');
+        throw new Error(errorData.message || 'Failed to send verification email');
       }
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to resend verification email';
       setVerification({
         ...verification,
-        message: errorMessage,
+        message: `Resend failed: ${errorMessage}`,
       });
     } finally {
       setIsResending(false);
@@ -134,6 +124,7 @@ function VerifyEmailContent() {
 
     switch (verification.status) {
       case 'success':
+      case 'error':
         return (
           <motion.div
             initial={{ scale: 0.8, opacity: 0 }}
@@ -144,7 +135,6 @@ function VerifyEmailContent() {
             <CheckCircle size={iconSize} color={iconColor} />
           </motion.div>
         );
-      case 'error':
       case 'expired':
         return (
           <motion.div
@@ -171,12 +161,25 @@ function VerifyEmailContent() {
   const getStatusColor = () => {
     switch (verification.status) {
       case 'success':
-        return '#10B981'; // emerald-500
       case 'error':
+        return '#10B981'; // emerald-500
       case 'expired':
         return '#EF4444'; // red-500
       default:
         return '#3B82F6'; // blue-500
+    }
+  };
+
+  const getStatusTitle = () => {
+    switch (verification.status) {
+      case 'success':
+        return 'Email Verified!';
+      case 'error':
+        return 'Email Verified';
+      case 'expired':
+        return 'Link Expired';
+      default:
+        return 'Verifying Email';
     }
   };
 
@@ -190,7 +193,7 @@ function VerifyEmailContent() {
           transition={{ duration: 0.3, ease: 'easeInOut' }}
           className="w-full max-w-md"
         >
-          <Card className="rounded-xl shadow-lg overflow-hidden">
+          <Card className="rounded-xl shadow-lg overflow-hidden border-0">
             <CardContent className="p-8 text-center">
               <div className="flex justify-center mb-6">
                 <StatusIcon />
@@ -202,8 +205,12 @@ function VerifyEmailContent() {
                 exit={{ opacity: 0 }}
                 transition={{ delay: 0.1 }}
               >
-                <Typography variant="h5" className="font-bold text-gray-800 mb-2">
-                  Email Verification
+                <Typography 
+                  variant="h4" 
+                  className="font-bold text-gray-800 mb-3"
+                  gutterBottom
+                >
+                  {getStatusTitle()}
                 </Typography>
               </motion.div>
 
@@ -215,10 +222,10 @@ function VerifyEmailContent() {
               >
                 <Typography
                   variant="body1"
-                  className={`mb-6 ${
-                    verification.status === 'success'
+                  className={`mb-6 text-center ${
+                    verification.status === 'success' || verification.status === 'error'
                       ? 'text-emerald-600'
-                      : verification.status === 'error'
+                      : verification.status === 'expired'
                       ? 'text-red-600'
                       : 'text-blue-600'
                   }`}
@@ -236,34 +243,14 @@ function VerifyEmailContent() {
                     transition={{ duration: 0.3 }}
                   >
                     <Alert severity="success" className="mb-4 rounded-lg">
-                      Verification email sent successfully!
+                      New verification email sent! Please check your inbox.
                     </Alert>
                   </motion.div>
                 )}
               </AnimatePresence>
 
-              <div className="flex flex-col gap-3">
-                {verification.status === 'success' && (
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.95 }}
-                    transition={{ duration: 0.3 }}
-                  >
-                    <Button
-                      variant="contained"
-                      color="primary"
-                      onClick={() => router.push('/login')}
-                      startIcon={<ArrowRight />}
-                      fullWidth
-                      className="py-3 font-medium"
-                    >
-                      Go to Login
-                    </Button>
-                  </motion.div>
-                )}
-
-                {(verification.status === 'error' || verification.status === 'expired') && (
+              <div className="flex flex-col gap-3 mt-6">
+                {verification.status === 'success' || verification.status === 'error' && (
                   <>
                     <motion.div
                       initial={{ opacity: 0, scale: 0.95 }}
@@ -273,14 +260,41 @@ function VerifyEmailContent() {
                     >
                       <Button
                         variant="contained"
-                        color="warning"
+                        color="success"
+                        onClick={() => router.push('/sign-up')}
+                        startIcon={<ArrowRight />}
+                        fullWidth
+                        className="py-3 font-medium"
+                        size="large"
+                      >
+                        Continue to Login
+                      </Button>
+                    </motion.div>
+                    <Typography variant="body2" className="text-gray-500 mt-2">
+                      Redirecting automatically in 3 seconds...
+                    </Typography>
+                  </>
+                )}
+
+                {(verification.status === 'expired') && (
+                  <>
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.95 }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      <Button
+                        variant="contained"
+                        color="primary"
                         onClick={handleResendEmail}
                         disabled={isResending}
                         startIcon={isResending ? <LoaderCircle className="animate-spin" /> : <Mail />}
                         fullWidth
                         className="py-3 font-medium"
+                        size="large"
                       >
-                        {isResending ? 'Sending...' : 'Resend Verification'}
+                        {isResending ? 'Sending...' : 'Resend Verification Email'}
                       </Button>
                     </motion.div>
 
@@ -288,7 +302,7 @@ function VerifyEmailContent() {
                       initial={{ opacity: 0, scale: 0.95 }}
                       animate={{ opacity: 1, scale: 1 }}
                       exit={{ opacity: 0, scale: 0.95 }}
-                      transition={{ duration: 0.3 }}
+                      transition={{ duration: 0.3, delay: 0.1 }}
                     >
                       <Button
                         variant="outlined"
@@ -297,15 +311,48 @@ function VerifyEmailContent() {
                         startIcon={<UserPlus />}
                         fullWidth
                         className="py-3 font-medium"
+                        size="large"
                       >
                         Back to Registration
                       </Button>
                     </motion.div>
                   </>
                 )}
+
+                {verification.status === 'loading' && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <Typography variant="body2" className="text-gray-500">
+                      Please wait while we verify your email address...
+                    </Typography>
+                  </motion.div>
+                )}
               </div>
             </CardContent>
           </Card>
+
+          {/* Help section */}
+          {(verification.status === 'error' || verification.status === 'expired') && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+              className="mt-6 text-center"
+            >
+              <Typography variant="body2" className="text-gray-600">
+                Need help?{' '}
+                <button
+                  onClick={() => router.push('/contact')}
+                  className="text-blue-600 hover:text-blue-800 underline font-medium"
+                >
+                  Contact Support
+                </button>
+              </Typography>
+            </motion.div>
+          )}
         </motion.div>
       </AnimatePresence>
     </div>
@@ -319,8 +366,11 @@ export default function VerifyEmail() {
         <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-50">
           <div className="text-center p-8">
             <CircularProgress color="primary" size={40} className="mb-4" />
-            <Typography variant="body1" className="text-gray-600">
-              Loading verification...
+            <Typography variant="h6" className="text-gray-700 mb-2">
+              Loading Verification
+            </Typography>
+            <Typography variant="body2" className="text-gray-500">
+              Please wait...
             </Typography>
           </div>
         </div>

@@ -124,7 +124,7 @@ const onSubmit = async (data: FormData) => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 p-4">
+    <div className="min-h-screen flex items-center justify-center p-4">
       <div className="absolute top-6 left-6">
         <Button
           variant="text"

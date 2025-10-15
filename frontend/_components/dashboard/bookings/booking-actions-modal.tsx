@@ -294,7 +294,7 @@ export const BookingActionsModal: React.FC<BookingActionsModalProps> = ({
                   </div>
                   <div>
                     <p className="text-gray-600">Budget</p>
-                    <p className="font-medium text-gray-900">GHS {booking.agreed_budget}</p>
+                    <p className="font-medium text-gray-900">GHS {booking.final_budget}</p>
                   </div>
                   <div>
                     <p className="text-gray-600">Start Date</p>
@@ -304,7 +304,7 @@ export const BookingActionsModal: React.FC<BookingActionsModalProps> = ({
                   </div>
                   <div>
                     <p className="text-gray-600">Duration</p>
-                    <p className="font-medium text-gray-900">{booking.estimated_duration}</p>
+                    <p className="font-medium text-gray-900">{booking.expected_completion_date}</p>
                   </div>
                 </div>
               </div>

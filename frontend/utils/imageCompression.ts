@@ -32,6 +32,8 @@ export const compressImage = (
         height *= ratio;
       }
 
+       URL.revokeObjectURL(img.src);
+
       // Set canvas dimensions
       canvas.width = width;
       canvas.height = height;
@@ -72,7 +74,10 @@ export const compressImage = (
       );
     };
 
-    img.onerror = () => reject(new Error('Failed to load image'));
+    img.onerror = () => {
+      URL.revokeObjectURL(img.src);
+      reject(new Error('Failed to load image'));
+    }
     img.src = URL.createObjectURL(file);
   });
 };

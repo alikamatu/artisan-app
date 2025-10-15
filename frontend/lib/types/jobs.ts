@@ -241,6 +241,7 @@ export interface CreateJobData {
     specific_address?: string;
   };
   category: JobCategory;
+  region: GhanaRegion;
   subcategory?: string;
   budget_min: number;
   budget_max: number;
