@@ -255,8 +255,6 @@ const uploadFile = useCallback(async (file: File): Promise<string | null> => {
   setSubmitting(true);
   setError(null);
 
-  let objectUrl: string | null = null;
-
   try {
     const token = await getValidToken();
     

@@ -46,7 +46,7 @@ function VerifyEmailContent() {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1000';
       
       // Try the path parameter endpoint first (your current backend setup)
-      let response = await fetch(`${apiUrl}/auth/verify/${token}`, {
+      const response = await fetch(`${apiUrl}/auth/verify/${token}`, {
         method: 'GET',
         headers: {
           'Accept': 'application/json',

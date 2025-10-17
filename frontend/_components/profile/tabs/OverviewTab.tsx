@@ -1,5 +1,7 @@
 import React from 'react';
-import { User, Award, Briefcase, Shield, Clock, MapPin, CheckCircle, FileText, TrendingUp, Eye, DollarSign } from 'lucide-react';
+import { User, Award, Briefcase, Shield, Clock, MapPin, CheckCircle, FileText, TrendingUp, DollarSign } from 'lucide-react';
+import { useJobs } from '@/lib/hooks/useJob';
+import { useBookings } from '@/lib/hooks/useBookings';
 
 interface OverviewTabProps {
   profile: any;
@@ -8,37 +10,114 @@ interface OverviewTabProps {
 
 export default function OverviewTab({ profile, isOwnProfile = false }: OverviewTabProps) {
   const isWorker = profile.role === 'worker';
+  
+  // Fetch real data based on user role
+  const { jobs: clientJobs, total: totalClientJobs } = useJobs(
+    isWorker ? {} : { client_id: profile.id }
+  );
+  
+  const { bookings: workerBookings, total: totalWorkerBookings } = useBookings(
+    isWorker ? { worker_id: profile.id } : {}
+  );
+
+  // Calculate metrics from real data
+  const calculateMetrics = () => {
+    if (isWorker) {
+      const completedBookings = workerBookings?.filter(
+        (booking: any) => booking.status === 'completed'
+      ).length || 0;
+      
+      const activeBookings = workerBookings?.filter(
+        (booking: any) => booking.status === 'active'
+      ).length || 0;
+
+      const totalEarnings = workerBookings?.reduce((sum: number, booking: any) => {
+        return booking.status === 'completed' ? sum + (booking.final_budget || 0) : sum;
+      }, 0) || 0;
+
+      const successRate = totalWorkerBookings > 0 
+        ? Math.round((completedBookings / totalWorkerBookings) * 100)
+        : 0;
+
+      return {
+        totalJobs: totalWorkerBookings,
+        completedJobs: completedBookings,
+        activeJobs: activeBookings,
+        successRate,
+        totalEarnings
+      };
+    } else {
+      // Client metrics
+      const activeJobs = clientJobs?.filter(
+        (job: any) => job.status === 'active' || job.current_status === 'active'
+      ).length || 0;
+
+      const completedJobs = clientJobs?.filter(
+        (job: any) => job.status === 'completed' || job.current_status === 'completed'
+      ).length || 0;
+
+      return {
+        totalJobsPosted: totalClientJobs,
+        activeJobs,
+        completedJobs
+      };
+    }
+  };
+
+  const metrics = calculateMetrics();
+  const professionalData = profile.metadata?.professional || {};
+  const profileData = profile.metadata?.profile || {};
+  const businessData = profile.metadata?.business || {};
+
+  // Format region for display
+  const formatRegion = (region: string) => {
+    if (!region) return '';
+    return region.split('_')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+  };
+
+  // Calculate verification level
+  const calculateVerificationLevel = () => {
+    let level = 0;
+    if (profile.email_verified) level++;
+    if (profile.phone_verified) level++;
+    if (profile.is_verified) level++;
+    return level;
+  };
+
+  const verificationLevel = calculateVerificationLevel();
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-2">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       {/* Main Content */}
-      <div className="lg:col-span-2 space-y-2">
+      <div className="lg:col-span-2 space-y-6">
         {/* About Section */}
-        {(profile.description || profile.bio) && (
+        {(profileData.bio || profile.bio) && (
           <div className="bg-white p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
               <User className="h-5 w-5 text-blue-600" />
               About {isWorker ? 'Me' : 'Us'}
             </h2>
             <p className="text-gray-700 leading-relaxed whitespace-pre-line">
-              {profile.description || profile.bio}
+              {profileData.bio || profile.bio}
             </p>
           </div>
         )}
 
         {/* Skills & Services Section */}
-        {(profile.skills?.length > 0 || profile.services?.length > 0) && (
+        {(professionalData.skills?.length > 0 || businessData.services?.length > 0) && (
           <div className="bg-white p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
               <Award className="h-5 w-5 text-blue-600" />
               {isWorker ? 'Skills & Services' : 'Services Needed'}
             </h2>
             <div className="space-y-4">
-              {profile.skills?.length > 0 && (
+              {professionalData.skills?.length > 0 && (
                 <div>
                   <h3 className="text-sm font-medium text-gray-700 mb-2">Skills</h3>
                   <div className="flex flex-wrap gap-2">
-                    {profile.skills.map((skill: string, index: number) => (
+                    {professionalData.skills.map((skill: string, index: number) => (
                       <span key={index} className="px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg text-sm">
                         {skill}
                       </span>
@@ -46,11 +125,11 @@ export default function OverviewTab({ profile, isOwnProfile = false }: OverviewT
                   </div>
                 </div>
               )}
-              {profile.services?.length > 0 && (
+              {businessData.services?.length > 0 && (
                 <div>
                   <h3 className="text-sm font-medium text-gray-700 mb-2">Services Offered</h3>
                   <div className="flex flex-wrap gap-2">
-                    {profile.services.map((service: string, index: number) => (
+                    {businessData.services.map((service: string, index: number) => (
                       <span key={index} className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg text-sm">
                         {service}
                       </span>
@@ -63,39 +142,39 @@ export default function OverviewTab({ profile, isOwnProfile = false }: OverviewT
         )}
 
         {/* Experience & Education */}
-        {isWorker && (profile.experience || profile.education || profile.certifications?.length > 0) && (
+        {isWorker && (professionalData.experience || professionalData.education || professionalData.certifications?.length > 0) && (
           <div className="bg-white p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
               <Briefcase className="h-5 w-5 text-blue-600" />
               Professional Background
             </h2>
             <div className="space-y-4">
-              {profile.experience && (
+              {professionalData.experience && (
                 <div>
                   <h3 className="font-medium text-gray-900 mb-1 flex items-center gap-2">
                     <TrendingUp className="h-4 w-4 text-blue-600" />
                     Experience
                   </h3>
-                  <p className="text-gray-600 pl-6">{profile.experience}</p>
+                  <p className="text-gray-600 pl-6">{professionalData.experience}</p>
                 </div>
               )}
-              {profile.education && (
+              {professionalData.education && (
                 <div>
                   <h3 className="font-medium text-gray-900 mb-1 flex items-center gap-2">
                     <FileText className="h-4 w-4 text-blue-600" />
                     Education
                   </h3>
-                  <p className="text-gray-600 pl-6">{profile.education}</p>
+                  <p className="text-gray-600 pl-6">{professionalData.education}</p>
                 </div>
               )}
-              {profile.certifications?.length > 0 && (
+              {professionalData.certifications?.length > 0 && (
                 <div>
                   <h3 className="font-medium text-gray-900 mb-2 flex items-center gap-2">
                     <Award className="h-4 w-4 text-blue-600" />
                     Certifications
                   </h3>
                   <div className="space-y-2 pl-6">
-                    {profile.certifications.map((cert: string, index: number) => (
+                    {professionalData.certifications.map((cert: string, index: number) => (
                       <div key={index} className="flex items-center gap-2 text-gray-600">
                         <CheckCircle className="h-4 w-4 text-blue-600" />
                         <span>{cert}</span>
@@ -110,7 +189,7 @@ export default function OverviewTab({ profile, isOwnProfile = false }: OverviewT
       </div>
 
       {/* Sidebar */}
-      <div className="space-y-2 border-l border-gray-200 pl-2">
+      <div className="space-y-6">
         {/* Verification Status */}
         <div className="bg-white p-6">
           <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
@@ -207,30 +286,30 @@ export default function OverviewTab({ profile, isOwnProfile = false }: OverviewT
               <>
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-600">Total Jobs</span>
-                  <span className="font-semibold text-gray-900">{profile.totalJobs || 0}</span>
+                  <span className="font-semibold text-gray-900">{metrics.totalJobs || 0}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-600">Completed</span>
-                  <span className="font-semibold text-gray-900">{profile.completedJobs || 0}</span>
+                  <span className="font-semibold text-gray-900">{metrics.completedJobs || 0}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-600">Success Rate</span>
-                  <span className="font-semibold text-gray-900">96%</span>
+                  <span className="font-semibold text-gray-900">{metrics.successRate || 0}%</span>
                 </div>
               </>
             ) : (
               <>
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-600">Jobs Posted</span>
-                  <span className="font-semibold text-gray-900">{profile.totalJobsPosted || 0}</span>
+                  <span className="font-semibold text-gray-900">{metrics.totalJobsPosted || 0}</span>
                 </div>
-                <div className="flex justify-between items-center">
+                {/* <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-600">Profile Views</span>
                   <span className="font-semibold text-gray-900 flex items-center gap-1">
                     <Eye className="h-4 w-4" />
                     124
                   </span>
-                </div>
+                </div> */}
               </>
             )}
             
@@ -240,7 +319,7 @@ export default function OverviewTab({ profile, isOwnProfile = false }: OverviewT
                 <span className="text-sm text-gray-600">Total Earnings</span>
                 <span className="font-semibold text-gray-900 flex items-center gap-1">
                   <DollarSign className="h-4 w-4" />
-                  GHS 2,450
+                  GHS {metrics.totalEarnings ? metrics.totalEarnings.toLocaleString() : '0'}
                 </span>
               </div>
             )}
@@ -251,7 +330,7 @@ export default function OverviewTab({ profile, isOwnProfile = false }: OverviewT
   );
 }
 
-// Add missing icon
+// Add missing icon (keep your original)
 const Navigation = ({ className }: { className?: string }) => (
   <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />

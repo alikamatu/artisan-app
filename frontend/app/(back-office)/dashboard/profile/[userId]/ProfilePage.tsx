@@ -10,6 +10,7 @@ import LoadingState from '@/_components/profile/LoadingState';
 import ErrorState from '@/_components/profile/ErrorState';
 import ProfileHeader from '@/_components/profile/ProfileHeader';
 import ReviewsTab from '@/_components/profile/tabs/ReviewsTab';
+import Link from 'next/link';
 
 interface ProfilePageProps {
   userId: string;
@@ -34,16 +35,16 @@ export default function ProfilePage({ userId, isOwnProfile = false }: ProfilePag
       <div className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center gap-4">
-            <a 
+            <Link 
               href="/"
               className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
             >
               <span className="text-sm text-gray-600 hover:text-blue-600">← Back</span>
-            </a>
+            </Link>
             <div className="flex items-center gap-2 text-sm text-gray-600">
-              <a href="/" className="hover:text-blue-600 transition-colors">
+              <Link href="/" className="hover:text-blue-600 transition-colors">
                 Home
-              </a>
+              </Link>
               <span>/</span>
               <span className="text-gray-900 font-medium">Profile</span>
             </div>
