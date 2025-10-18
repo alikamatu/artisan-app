@@ -1,21 +1,3 @@
-// import { Injectable } from '@nestjs/common';
-// import { SupabaseService } from 'src/supabase/supabase.service';
-
-// @Injectable()
-// export class FileUploadService {
-//   constructor(private readonly supabase: SupabaseService) {}
-
-//   async uploadFile(bucket: string, file: import('multer').File): Promise<string> {
-//     const filePath = `${Date.now()}-${file.originalname}`;
-//     const { data, error } = await this.supabase.client.storage
-//       .from(bucket)
-//       .upload(filePath, file.buffer);
-
-//     if (error) throw new Error(`File upload failed: ${error.message}`);
-//     return data.path;
-//   }
-// }
-
 import { Injectable, Logger } from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
 

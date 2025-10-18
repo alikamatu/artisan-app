@@ -1,39 +1,38 @@
-import React from 'react';
-import { User, Star, Briefcase } from 'lucide-react';
-
 interface ProfileNavigationProps {
   activeTab: string;
-  onTabChange: (tab: 'overview' | 'reviews' | 'portfolio') => void;
+  onTabChange: (tab: 'overview' | 'reviews' | 'portfolio' | 'my-jobs') => void;
+  profile: any;
 }
 
-export default function ProfileNavigation({ activeTab, onTabChange }: ProfileNavigationProps) {
-  const tabs = [
-    { id: 'overview', label: 'Overview', icon: User },
-    // { id: 'activity', label: 'Activity', icon: TrendingUp },
-    { id: 'reviews', label: 'Reviews', icon: Star },
-    { id: 'portfolio', label: 'Portfolio', icon: Briefcase }
-  ] as const;
+export default function ProfileNavigation({ activeTab, onTabChange, profile }: ProfileNavigationProps) {
+  const isWorker = profile.role === 'worker';
+  
+  const tabs: { id: 'overview' | 'reviews' | 'portfolio' | 'my-jobs'; label: string }[] = [
+    { id: 'overview', label: 'Overview' },
+    { id: 'reviews', label: 'Reviews' },
+    ...(isWorker 
+      ? [{ id: 'portfolio' as const, label: 'Portfolio' }]
+      : [{ id: 'my-jobs' as const, label: 'My Jobs' }]
+    ),
+  ];
 
   return (
-    <div className="bg-white border-b border-gray-200">
-      <div className="max-w-7xl mx-auto px-4">
-        <nav className="flex space-x-8">
-          {tabs.map(({ id, label, icon: Icon }) => (
-            <button
-              key={id}
-              onClick={() => onTabChange(id)}
-              className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 transition-colors ${
-                activeTab === id
-                  ? 'border-blue-600 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              <Icon className="h-4 w-4" />
-              {label}
-            </button>
-          ))}
-        </nav>
-      </div>
+    <div className="border-b border-gray-200">
+      <nav className="flex space-x-8">
+        {tabs.map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => onTabChange(tab.id)}
+            className={`py-4 px-1 border-b-2 font-medium text-sm ${
+              activeTab === tab.id
+                ? 'border-blue-500 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </nav>
     </div>
   );
 }

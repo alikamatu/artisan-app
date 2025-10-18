@@ -12,6 +12,7 @@ import OverviewTab from './tabs/OverviewTab';
 import ReviewsTab from './tabs/ReviewsTab';
 import PortfolioTab from './tabs/PortfolioTab';
 import { EditProfileDialog } from './EditProfileDialog'
+import MyJobsTab from './tabs/MyJobsTab';
 
 
 interface ProfilePageProps {
@@ -21,7 +22,7 @@ interface ProfilePageProps {
 
 export default function ProfilePage({ isOwnProfile = false, userId }: ProfilePageProps) {
   const { profile, loading, error, updateProfile } = useUserProfile();
-  const [activeTab, setActiveTab] = useState<'overview' | 'reviews' | 'portfolio' | 'activity'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'reviews' | 'portfolio' | 'activity' | 'my-jobs'>('overview');
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const { logout } = useAuth();
 
@@ -103,25 +104,25 @@ export default function ProfilePage({ isOwnProfile = false, userId }: ProfilePag
           />
 
           {/* Navigation Tabs */}
-          <ProfileNavigation activeTab={activeTab} onTabChange={setActiveTab} />
+          <ProfileNavigation activeTab={activeTab} onTabChange={setActiveTab} profile={profile} />
         </div>
       </div>
 
       {/* Content Section */}
-      <div className="max-w-7xl mx-auto px-2">
-        {activeTab === 'overview' && (
-          <OverviewTab profile={profile} isOwnProfile={isOwnProfile} />
-        )}
-        {/* {activeTab === 'activity' && (
-          <ActivityTab profile={profile} isOwnProfile={isOwnProfile} />
-        )} */}
-        {activeTab === 'reviews' && (
-          <ReviewsTab profile={profile} isOwnProfile={isOwnProfile} />
-        )}
-        {activeTab === 'portfolio' && (
-          <PortfolioTab profile={profile} isOwnProfile={isOwnProfile} />
-        )}
-      </div>
+        <div className="max-w-7xl mx-auto px-2">
+          {activeTab === 'overview' && (
+            <OverviewTab profile={profile} isOwnProfile={isOwnProfile} />
+          )}
+          {activeTab === 'reviews' && (
+            <ReviewsTab profile={profile} isOwnProfile={isOwnProfile} />
+          )}
+          {profile.role === 'worker' && activeTab === 'portfolio' && (
+            <PortfolioTab profile={profile} isOwnProfile={isOwnProfile} />
+          )}
+          {profile.role === 'client' && activeTab === 'my-jobs' && (
+            <MyJobsTab profile={profile} isOwnProfile={isOwnProfile} />
+          )}
+        </div>
 
       {/* Edit Profile Dialog */}
       {isOwnProfile && (

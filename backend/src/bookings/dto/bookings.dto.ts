@@ -53,7 +53,8 @@ export class UpdateBookingDto {
   @IsOptional()
   actual_completion_date?: string;
 
-@IsNumber()
+  @IsUUID()
+  @IsOptional()
   selected_worker_id?: string;
 
   @IsString()

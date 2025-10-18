@@ -1,7 +1,7 @@
-// types/jobs.ts
 export enum JobStatus {
   OPEN = 'open',
   IN_PROGRESS = 'in_progress',
+  ACTIVE = 'active',
   COMPLETED = 'completed',
   CANCELLED = 'cancelled'
 }

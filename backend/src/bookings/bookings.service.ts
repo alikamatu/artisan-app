@@ -64,104 +64,122 @@ export class BookingsService {
   ) {}
 
   async create(createBookingDto: CreateBookingDto, clientId: string): Promise<BookingResponse> {
-    this.logger.log(`Creating booking for client ${clientId} from application ${createBookingDto.application_id}`);
+  this.logger.log(`Creating booking for client ${clientId} from application ${createBookingDto.application_id}`);
 
-    try {
-      // Validate application exists and is accepted
-      const application = await this.applicationsService.findOne(createBookingDto.application_id, clientId);
-      
-      if (application.status !== 'accepted') {
-        throw new BadRequestException('Can only create bookings from accepted applications');
-      }
+  try {
+    // Validate application exists and is accepted
+    const application = await this.applicationsService.findOne(createBookingDto.application_id, clientId);
+    
+    if (application.status !== 'accepted') {
+      throw new BadRequestException('Can only create bookings from accepted applications');
+    }
 
-      // Check if booking already exists for this application
-      const { data: existingBooking } = await this.supabase
-        .client
-        .from('bookings')
-        .select('id')
-        .eq('application_id', createBookingDto.application_id)
-        .single();
+    // Check if booking already exists for this application
+    const { data: existingBooking } = await this.supabase
+      .client
+      .from('bookings')
+      .select('id')
+      .eq('application_id', createBookingDto.application_id)
+      .single();
 
-      if (existingBooking) {
-        throw new BadRequestException('Booking already exists for this application');
-      }
+    if (existingBooking) {
+      throw new BadRequestException('Booking already exists for this application');
+    }
 
-      // Validate dates
-      const startDate = new Date(createBookingDto.start_date);
-      const expectedCompletion = new Date(createBookingDto.expected_completion_date);
-      const today = new Date();
-      
-      if (startDate < today) {
-        throw new BadRequestException('Start date cannot be in the past');
-      }
+    // Get current job status to determine appropriate status transition
+    const { data: currentJob } = await this.supabase
+      .client
+      .from('jobs')
+      .select('status, current_status')
+      .eq('id', application.job_id)
+      .single();
 
-      if (expectedCompletion <= startDate) {
-        throw new BadRequestException('Expected completion date must be after start date');
-      }
+    if (!currentJob) {
+      throw new BadRequestException('Job not found');
+    }
 
-      // Prepare booking data
-      const bookingData = {
-        ...createBookingDto,
-        client_id: clientId,
-        worker_id: application.worker_id,
-        job_id: application.job_id,
-        status: BookingStatus.ACTIVE,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
+    // Validate dates
+    const startDate = new Date(createBookingDto.start_date);
+    const expectedCompletion = new Date(createBookingDto.expected_completion_date);
+    const today = new Date();
+    
+    if (startDate < today) {
+      throw new BadRequestException('Start date cannot be in the past');
+    }
 
-      // Create booking
-      const { data: booking, error } = await this.supabase
-        .client
-        .from('bookings')
-        .insert([bookingData])
-        .select('*')
-        .single();
+    if (expectedCompletion <= startDate) {
+      throw new BadRequestException('Expected completion date must be after start date');
+    }
 
-      if (error) {
-        this.logger.error('Failed to create booking:', error);
-        throw new InternalServerErrorException('Failed to create booking');
-      }
+    // Prepare booking data
+    const bookingData = {
+      ...createBookingDto,
+      client_id: clientId,
+      worker_id: application.worker_id,
+      job_id: application.job_id,
+      status: BookingStatus.ACTIVE,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
 
-      // Update application with booking_id
-      await this.supabase
-        .client
-        .from('job_applications')
-        .update({ booking_id: booking.id })
-        .eq('id', createBookingDto.application_id);
+    // Create booking
+    const { data: booking, error } = await this.supabase
+      .client
+      .from('bookings')
+      .insert([bookingData])
+      .select('*')
+      .single();
 
-      // Update job status
-      await this.jobsService.update(application.job_id, {
-        status: 'active' as any,
-        current_status: 'booked' as any
-      }, clientId);
-
-      // Create milestone payments if provided
-      if (createBookingDto.milestone_payments && createBookingDto.milestone_payments.length > 0) {
-        const milestoneData = createBookingDto.milestone_payments.map(milestone => ({
-          ...milestone,
-          booking_id: booking.id,
-          status: 'pending'
-        }));
-
-        await this.supabase
-          .client
-          .from('milestone_payments')
-          .insert(milestoneData);
-      }
-
-      const enrichedBooking = await this.enrichBookingWithRelatedData(booking);
-      return this.formatBookingResponse(enrichedBooking);
-    } catch (error) {
-      if (error instanceof BadRequestException || 
-          error instanceof InternalServerErrorException) {
-        throw error;
-      }
-      
-      this.logger.error('Unexpected error creating booking:', error);
+    if (error) {
+      this.logger.error('Failed to create booking:', error);
       throw new InternalServerErrorException('Failed to create booking');
     }
+
+    // Update application with booking_id
+    await this.supabase
+      .client
+      .from('job_applications')
+      .update({ booking_id: booking.id })
+      .eq('id', createBookingDto.application_id);
+
+    // Update job status - only transition from open/in_progress to active
+    let jobStatusUpdate: any = {
+      current_status: 'active' as any
+    };
+
+    // Only update main status if it's not already in_progress
+    if (currentJob.status !== 'in_progress') {
+      jobStatusUpdate.status = 'active' as any;
+    }
+
+    await this.jobsService.update(application.job_id, jobStatusUpdate, clientId);
+
+    // Create milestone payments if provided
+    if (createBookingDto.milestone_payments && createBookingDto.milestone_payments.length > 0) {
+      const milestoneData = createBookingDto.milestone_payments.map(milestone => ({
+        ...milestone,
+        booking_id: booking.id,
+        status: 'pending'
+      }));
+
+      await this.supabase
+        .client
+        .from('milestone_payments')
+        .insert(milestoneData);
+    }
+
+    const enrichedBooking = await this.enrichBookingWithRelatedData(booking);
+    return this.formatBookingResponse(enrichedBooking);
+  } catch (error) {
+    if (error instanceof BadRequestException || 
+        error instanceof InternalServerErrorException) {
+      throw error;
+    }
+    
+    this.logger.error('Unexpected error creating booking:', error);
+    throw new InternalServerErrorException('Failed to create booking');
   }
+}
 
   async findOne(id: string, currentUserId: string): Promise<BookingResponse> {
     if (!this.isValidUUID(id)) {

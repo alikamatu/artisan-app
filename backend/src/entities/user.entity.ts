@@ -3,6 +3,7 @@ import { Job } from './job.entity';
 import { Booking } from './booking.entity';
 import { Review } from './review.entity';
 import { JobApplication } from './job-application.entity';
+import { PortfolioItem } from './portfolio.entity';
 
 export enum UserRole {
   CLIENT = 'client',
@@ -74,6 +75,9 @@ export class User {
 
   @OneToMany(() => JobApplication, application => application.worker)
   workerApplications: JobApplication[];
+
+  @OneToMany(() => PortfolioItem, portfolioItem => portfolioItem.worker)
+  portfolioItems: PortfolioItem[];
 
 @OneToMany(() => Booking, booking => booking.client)
 client: Booking[];
