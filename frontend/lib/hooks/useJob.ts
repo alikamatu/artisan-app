@@ -89,6 +89,33 @@ async createJob(data: CreateJobData): Promise<JobResponse> {
     return response.json();
   },
 
+  // Add this to your jobsApi object in useJob.ts
+async getJobsByClient(clientId: string, filters: JobFilters = {}): Promise<JobListResponse> {
+  const params = new URLSearchParams();
+  params.append('client_id', clientId);
+  
+  Object.entries(filters).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== '' && key !== 'client_id') {
+      if (Array.isArray(value)) {
+        value.forEach(v => params.append(key, v.toString()));
+      } else {
+        params.append(key, value.toString());
+      }
+    }
+  });
+
+  const response = await fetch(`${API_CONFIG.baseURL}${API_CONFIG.endpoints.jobs}?${params}`, {
+    headers: getAuthHeaders()
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || `Failed to fetch client jobs: ${response.status}`);
+  }
+
+  return response.json();
+},
+
   // Delete job
   async deleteJob(id: string): Promise<{ message: string }> {
     const response = await fetch(`${API_CONFIG.baseURL}${API_CONFIG.endpoints.jobs}/${id}`, {
@@ -177,6 +204,59 @@ export const useJobs = (filters: JobFilters = {}): UseJobsResult => {
     isLoading,
     error,
     refetch: fetchJobs
+  };
+};
+
+// Hook for fetching jobs by client ID (for public profiles)
+export const useClientJobs = (clientId: string, filters: JobFilters = {}): UseJobsResult => {
+  const [jobs, setJobs] = useState<JobResponse[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [totalPages, setTotalPages] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchClientJobs = useCallback(async () => {
+    if (!clientId) {
+      setJobs([]);
+      setTotal(0);
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      const response = await jobsApi.getJobsByClient(clientId, filters);
+      setJobs(response.jobs);
+      setTotal(response.total);
+      setPage(response.page);
+      setLimit(response.limit);
+      setTotalPages(response.totalPages);
+    } catch (err) {
+      setError(handleApiError(err));
+      setJobs([]);
+      setTotal(0);
+      setTotalPages(0);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [clientId, JSON.stringify(filters)]);
+
+  useEffect(() => {
+    fetchClientJobs();
+  }, [fetchClientJobs]);
+
+  return {
+    jobs,
+    total,
+    page,
+    limit,
+    totalPages,
+    isLoading,
+    error,
+    refetch: fetchClientJobs
   };
 };
 

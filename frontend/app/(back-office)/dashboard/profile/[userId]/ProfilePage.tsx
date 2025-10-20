@@ -9,6 +9,7 @@ import LoadingState from '@/_components/profile/LoadingState';
 import ErrorState from '@/_components/profile/ErrorState';
 import ProfileHeader from '@/_components/profile/ProfileHeader';
 import ReviewsTab from '@/_components/profile/tabs/ReviewsTab';
+import MyJobsTab from '@/_components/profile/tabs/MyJobsTab'; // ADD THIS IMPORT
 import Link from 'next/link';
 
 interface ProfilePageProps {
@@ -64,14 +65,14 @@ export default function ProfilePage({ userId, isOwnProfile = false }: ProfilePag
         {activeTab === 'overview' && (
           <OverviewTab profile={profile} isOwnProfile={isOwnProfile} />
         )}
-        {/* {activeTab === 'activity' && (
-          <ActivityTab profile={profile} isOwnProfile={isOwnProfile} />
-        )} */}
         {activeTab === 'reviews' && (
           <ReviewsTab profile={profile} isOwnProfile={isOwnProfile} />
         )}
         {activeTab === 'portfolio' && (
           <PortfolioTab profile={profile} isOwnProfile={isOwnProfile} />
+        )}
+        {activeTab === 'my-jobs' && ( // ADD THIS TAB
+          <MyJobsTab profile={profile} isOwnProfile={isOwnProfile} />
         )}
       </div>
     </div>

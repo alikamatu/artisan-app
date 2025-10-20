@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Briefcase, Calendar, MapPin, DollarSign, Users, Eye, Plus, Edit, Trash2, Loader2 } from 'lucide-react';
-import { useMyJobs } from '@/lib/hooks/useJob';
+import { useMyJobs, useJobs } from '@/lib/hooks/useJob';
 import Link from 'next/link';
 
 type JobStatus = 'open' | 'active' | 'in_progress' | 'completed' | 'cancelled';
@@ -14,22 +14,25 @@ const MyJobsTab: React.FC<MyJobsTabProps> = ({ profile, isOwnProfile = false }) 
   const [statusFilter, setStatusFilter] = useState<'all' | JobStatus>('all');
   const [currentPage, setCurrentPage] = useState(1);
   
-  // Fetch client's jobs
-  const {   
-    jobs, 
-    total, 
-    page, 
-    totalPages, 
-    isLoading, 
-    error, 
-    refetch 
-  } = useMyJobs({
-    page: currentPage,
-    limit: 10,
-    status: statusFilter === 'all' ? undefined : (statusFilter as any),
-    sort_by: 'created_at',
-    sort_order: 'DESC'
-  });
+  // CORRECTED: Conditional hook usage
+  const jobsData = isOwnProfile 
+    ? useMyJobs({
+        page: currentPage,
+        limit: 10,
+        status: statusFilter === 'all' ? undefined : (statusFilter as any),
+        sort_by: 'created_at',
+        sort_order: 'DESC'
+      })
+    : useJobs({ // Use regular useJobs with client_id filter for public profiles
+        client_id: profile.id,
+        page: currentPage,
+        limit: 10,
+        status: statusFilter === 'all' ? undefined : (statusFilter as any),
+        sort_by: 'created_at',
+        sort_order: 'DESC'
+      });
+
+  const { jobs, total, page, totalPages, isLoading, error, refetch } = jobsData;
 
   // Format job status for display
   const formatStatus = (status: string) => {
@@ -60,31 +63,30 @@ const MyJobsTab: React.FC<MyJobsTabProps> = ({ profile, isOwnProfile = false }) 
     completed: jobs.filter(job => job.status === 'completed').length,
   };
 
-const getJobLocation = (job: any): string => {
-  if (job.city) return job.city;
-  if (job.region) return job.region;
+  const getJobLocation = (job: any): string => {
+    if (job.city) return job.city;
+    if (job.region) return job.region;
 
-if (job.location) {
-  const { city, region, specific_address } = job.location;
-  const parts = [specific_address, city, region].filter(Boolean);
-  return parts.join(', ');
-}
+    if (job.location) {
+      const { city, region, specific_address } = job.location;
+      const parts = [specific_address, city, region].filter(Boolean);
+      return parts.join(', ');
+    }
 
-  return 'Location not specified';
-};
-
+    return 'Location not specified';
+  };
 
   if (isLoading && jobs.length === 0) {
     return (
       <div className="space-y-6">
-        <div className="bg-white rounded-lg border p-6">
+        <div className="bg-white rounded-lg p-6">
           <div className="flex items-center justify-between mb-6">
             <div>
               <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
                 <Briefcase className="h-5 w-5 text-blue-600" />
-                My Jobs
+                {isOwnProfile ? 'My Jobs' : `${profile.name}'s Jobs`}
               </h2>
-              <p className="text-gray-600 mt-1">Loading your jobs...</p>
+              <p className="text-gray-600 mt-1">Loading jobs...</p>
             </div>
           </div>
           <div className="flex justify-center py-12">
@@ -95,28 +97,52 @@ if (job.location) {
     );
   }
 
+  // Add error handling
+  if (error && jobs.length === 0) {
+    return (
+      <div className="space-y-6">
+        <div className="bg-white rounded-lg p-6">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                <Briefcase className="h-5 w-5 text-blue-600" />
+                {isOwnProfile ? 'My Jobs' : `${profile.name}'s Jobs`}
+              </h2>
+              <p className="text-red-600 mt-1">Error loading jobs: {error}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Jobs Header */}
-      <div className="bg-white rounded-lg border p-6">
+      <div className="bg-white rounded-lg p-6">
         <div className="flex items-center justify-between mb-6">
           <div>
             <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
               <Briefcase className="h-5 w-5 text-blue-600" />
-              My Jobs
+              {isOwnProfile ? 'My Jobs' : `${profile.name}'s Jobs`}
             </h2>
             <p className="text-gray-600 mt-1">
-              Manage and track your posted jobs
+              {isOwnProfile 
+                ? 'Manage and track your posted jobs' 
+                : `View jobs posted by ${profile.name}`
+              }
             </p>
           </div>
           
-          <Link 
-            href="/jobs/create"
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            <Plus className="h-4 w-4" />
-            Post New Job
-          </Link>
+          {isOwnProfile && (
+            <Link 
+              href="/dashboard/jobs/create"
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              <Plus className="h-4 w-4" />
+              Post New Job
+            </Link>
+          )}
         </div>
 
         {/* Job Stats */}
@@ -168,12 +194,12 @@ if (job.location) {
               const statusInfo = formatStatus(job.status);
               
               return (
-                <div key={job.id} className="bg-white rounded-lg border p-6 hover:shadow-md transition-shadow">
+                <div key={job.id} className="bg-white rounded-lg  p-6 transition-shadow">
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
                         <h3 className="text-lg font-semibold text-gray-900 hover:text-blue-600 transition-colors">
-                          <Link href={`/jobs/${job.id}`}>
+                          <Link href={`/dashboard/jobs/${job.id}`}>
                             {job.title}
                           </Link>
                         </h3>
@@ -220,7 +246,7 @@ if (job.location) {
                     {isOwnProfile && (
                       <div className="flex items-center gap-2 ml-4">
                         <Link
-                          href={`/jobs/${job.id}/edit`}
+                          href={`/dashboard/jobs/${job.id}/edit`}
                           className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                         >
                           <Edit className="h-4 w-4" />
@@ -233,13 +259,13 @@ if (job.location) {
                   </div>
 
                   {/* Posted Date */}
-                  <div className="flex items-center justify-between pt-4 border-t">
+                  <div className="flex items-center justify-between pt-4 border-t border-gray-200">
                     <span className="text-sm text-gray-500">
                       Posted {new Date(job.created_at).toLocaleDateString()}
                     </span>
                     
                     <Link 
-                      href={`/jobs/${job.id}`}
+                      href={`/dashboard/jobs/${job.id}`}
                       className="text-sm text-blue-600 hover:text-blue-700 font-medium"
                     >
                       View Details →
@@ -278,18 +304,23 @@ if (job.location) {
         <div className="bg-white rounded-lg border p-12 text-center">
           <Briefcase className="h-16 w-16 text-gray-400 mx-auto mb-4" />
           <h3 className="text-lg font-semibold text-gray-900 mb-2">
-            No Jobs Posted Yet
+            {isOwnProfile ? 'No Jobs Posted Yet' : 'No Jobs Posted'}
           </h3>
           <p className="text-gray-600 mb-6 max-w-md mx-auto">
-            Start posting jobs to find skilled workers for your projects. Create your first job to get started.
+            {isOwnProfile 
+              ? 'Start posting jobs to find skilled workers for your projects. Create your first job to get started.'
+              : `${profile.name} hasn't posted any jobs yet.`
+            }
           </p>
-          <Link 
-            href="/jobs/create"
-            className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-          >
-            <Plus className="h-5 w-5" />
-            Post Your First Job
-          </Link>
+          {isOwnProfile && (
+            <Link 
+              href="/dashboard/jobs/create"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+            >
+              <Plus className="h-5 w-5" />
+              Post Your First Job
+            </Link>
+          )}
         </div>
       )}
     </div>
