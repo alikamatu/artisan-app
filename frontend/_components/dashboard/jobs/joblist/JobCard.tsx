@@ -3,6 +3,7 @@ import { GhanaRegion, Job, JobStatus } from "@/lib/types/jobs";
 import { Bookmark, Calendar, CheckCircle, Clock, DollarSign, Eye, MapPin, Send, Users } from "lucide-react";
 import { memo } from "react";
 
+
 const FormatRegion = ({ region }: { region: GhanaRegion | undefined | null }) => (
   <span>
     {region ? (regionNames[region] || region.split('_').map(word => 
@@ -180,7 +181,7 @@ const JobCard = memo(({
         <div className="flex items-center gap-3 min-w-0">
           {showMyJobs ? (
             <div className="flex items-center gap-3">
-              <div className={`px-3 py-1.5 rounded-full text-xs font-semibold border-2 ${statusColors[job.status]}`}>
+              <div className={`px-3 py-1.5 rounded-full text-xs font-semibold border-2 ${statusColors[job.status as keyof typeof statusColors]}`}>
                 {job.status.replace('_', ' ').toUpperCase()}
               </div>
               {job.selected_worker && (

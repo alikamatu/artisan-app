@@ -417,10 +417,10 @@ const formatLocationDisplay = (location: any) => {
                     </div>
                     
                     <div className="flex items-center gap-4 text-sm text-gray-600 mb-2">
-<div className="flex items-center gap-1">
-  <MapPin className="h-4 w-4" />
-  <span>{formatLocationDisplay(job.location)}</span> {/* Changed this line */}
-</div>
+                      <div className="flex items-center gap-1">
+                        <MapPin className="h-4 w-4" />
+                        <span>{formatLocationDisplay(job.location)}</span> {/* Changed this line */}
+                      </div>
                       <div className="flex items-center gap-1">
                         <DollarSign className="h-4 w-4" />
                         <span>GHS {job.budget_min.toLocaleString()} - GHS {job.budget_max.toLocaleString()}</span>
