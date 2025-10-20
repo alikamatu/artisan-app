@@ -65,59 +65,45 @@ export default function OverviewTab({ profile, isOwnProfile = false }: OverviewT
   };
 
   const metrics = calculateMetrics();
-  const professionalData = profile.metadata?.professional || {};
-  const profileData = profile.metadata?.profile || {};
-  const businessData = profile.metadata?.business || {};
-
-  // Format region for display
-  const formatRegion = (region: string) => {
-    if (!region) return '';
-    return region.split('_')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
-  };
-
-  // Calculate verification level
-  const calculateVerificationLevel = () => {
-    let level = 0;
-    if (profile.email_verified) level++;
-    if (profile.phone_verified) level++;
-    if (profile.is_verified) level++;
-    return level;
-  };
-
-  const verificationLevel = calculateVerificationLevel();
+  
+  // Use the flat data structure from usePublicProfile
+  const skills = profile.skills || [];
+  const services = profile.services || [];
+  const description = profile.description || '';
+  const experience = profile.experience;
+  const education = profile.education;
+  const certifications = profile.certifications || [];
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       {/* Main Content */}
       <div className="lg:col-span-2 space-y-6">
         {/* About Section */}
-        {(profileData.bio || profile.bio) && (
+        {description && (
           <div className="bg-white p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
               <User className="h-5 w-5 text-blue-600" />
               About {isWorker ? 'Me' : 'Us'}
             </h2>
             <p className="text-gray-700 leading-relaxed whitespace-pre-line">
-              {profileData.bio || profile.bio}
+              {description}
             </p>
           </div>
         )}
 
         {/* Skills & Services Section */}
-        {(professionalData.skills?.length > 0 || businessData.services?.length > 0) && (
+        {(skills.length > 0 || services.length > 0) && (
           <div className="bg-white p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
               <Award className="h-5 w-5 text-blue-600" />
               {isWorker ? 'Skills & Services' : 'Services Needed'}
             </h2>
             <div className="space-y-4">
-              {professionalData.skills?.length > 0 && (
+              {skills.length > 0 && (
                 <div>
                   <h3 className="text-sm font-medium text-gray-700 mb-2">Skills</h3>
                   <div className="flex flex-wrap gap-2">
-                    {professionalData.skills.map((skill: string, index: number) => (
+                    {skills.map((skill: string, index: number) => (
                       <span key={index} className="px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg text-sm">
                         {skill}
                       </span>
@@ -125,11 +111,13 @@ export default function OverviewTab({ profile, isOwnProfile = false }: OverviewT
                   </div>
                 </div>
               )}
-              {businessData.services?.length > 0 && (
+              {services.length > 0 && (
                 <div>
-                  <h3 className="text-sm font-medium text-gray-700 mb-2">Services Offered</h3>
+                  <h3 className="text-sm font-medium text-gray-700 mb-2">
+                    {isWorker ? 'Services Offered' : 'Services Needed'}
+                  </h3>
                   <div className="flex flex-wrap gap-2">
-                    {businessData.services.map((service: string, index: number) => (
+                    {services.map((service: string, index: number) => (
                       <span key={index} className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg text-sm">
                         {service}
                       </span>
@@ -142,39 +130,39 @@ export default function OverviewTab({ profile, isOwnProfile = false }: OverviewT
         )}
 
         {/* Experience & Education */}
-        {isWorker && (professionalData.experience || professionalData.education || professionalData.certifications?.length > 0) && (
+        {isWorker && (experience || education || certifications.length > 0) && (
           <div className="bg-white p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
               <Briefcase className="h-5 w-5 text-blue-600" />
               Professional Background
             </h2>
             <div className="space-y-4">
-              {professionalData.experience && (
+              {experience && (
                 <div>
                   <h3 className="font-medium text-gray-900 mb-1 flex items-center gap-2">
                     <TrendingUp className="h-4 w-4 text-blue-600" />
                     Experience
                   </h3>
-                  <p className="text-gray-600 pl-6">{professionalData.experience}</p>
+                  <p className="text-gray-600 pl-6">{experience}</p>
                 </div>
               )}
-              {professionalData.education && (
+              {education && (
                 <div>
                   <h3 className="font-medium text-gray-900 mb-1 flex items-center gap-2">
                     <FileText className="h-4 w-4 text-blue-600" />
                     Education
                   </h3>
-                  <p className="text-gray-600 pl-6">{professionalData.education}</p>
+                  <p className="text-gray-600 pl-6">{education}</p>
                 </div>
               )}
-              {professionalData.certifications?.length > 0 && (
+              {certifications.length > 0 && (
                 <div>
                   <h3 className="font-medium text-gray-900 mb-2 flex items-center gap-2">
                     <Award className="h-4 w-4 text-blue-600" />
                     Certifications
                   </h3>
                   <div className="space-y-2 pl-6">
-                    {professionalData.certifications.map((cert: string, index: number) => (
+                    {certifications.map((cert: string, index: number) => (
                       <div key={index} className="flex items-center gap-2 text-gray-600">
                         <CheckCircle className="h-4 w-4 text-blue-600" />
                         <span>{cert}</span>
@@ -303,13 +291,6 @@ export default function OverviewTab({ profile, isOwnProfile = false }: OverviewT
                   <span className="text-sm text-gray-600">Jobs Posted</span>
                   <span className="font-semibold text-gray-900">{metrics.totalJobsPosted || 0}</span>
                 </div>
-                {/* <div className="flex justify-between items-center">
-                  <span className="text-sm text-gray-600">Profile Views</span>
-                  <span className="font-semibold text-gray-900 flex items-center gap-1">
-                    <Eye className="h-4 w-4" />
-                    124
-                  </span>
-                </div> */}
               </>
             )}
             
@@ -330,7 +311,7 @@ export default function OverviewTab({ profile, isOwnProfile = false }: OverviewT
   );
 }
 
-// Add missing icon (keep your original)
+// Add missing icon
 const Navigation = ({ className }: { className?: string }) => (
   <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />

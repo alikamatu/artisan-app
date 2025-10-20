@@ -4,6 +4,7 @@ import React, { useEffect } from 'react';
 import { MapPin, Star, BadgeCheck } from 'lucide-react';
 import { getDisplayName, getInitials } from '@/helpers/job-helpers';
 import { UserProfileLink } from '@/_components/common/UserProfileLink';
+import { UserName } from '@/_components/common/user-name';
 
 interface WorkerInfoProps {
   worker: any;
@@ -41,7 +42,6 @@ export const WorkerInfo: React.FC<WorkerInfoProps> = ({ worker }) => {
       ) : (
         <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
           <span className="text-white text-sm font-medium">
-            kjhrljgkf
             <UserProfileLink userId={worker.id} userName={getDisplayName(worker)} className="sr-only" />
           </span>
         </div>
@@ -50,7 +50,7 @@ export const WorkerInfo: React.FC<WorkerInfoProps> = ({ worker }) => {
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
           <p className="font-medium text-gray-900 truncate">
-            {worker.display_name || worker.name}
+            <UserName userId={worker.id} userName={getDisplayName(worker)} />
           </p>
           {worker.verification_status === 'verified' && (
             <BadgeCheck className="h-4 w-4 text-blue-500" />

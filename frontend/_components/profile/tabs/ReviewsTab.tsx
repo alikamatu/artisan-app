@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Star, Briefcase, Users, ThumbsUp, MessageCircle, Loader2 } from 'lucide-react';
 import { useReviews, useCanReview } from '@/lib/hooks/useReviews';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 interface ReviewsTabProps {
   profile: any;
@@ -11,6 +12,7 @@ interface ReviewsTabProps {
 export default function ReviewsTab({ profile, isOwnProfile = false }: ReviewsTabProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const [limit] = useState(10);
+  const router = useRouter();
 
   // Fetch reviews for this worker
   const { 
@@ -160,7 +162,7 @@ export default function ReviewsTab({ profile, isOwnProfile = false }: ReviewsTab
       </div>
 
       {/* Reviews List */}
-      <div className="bg-gray-50 divide-y">
+      <div className="divide-y">
         {reviews.map((review: any) => (
           <div key={review.id} className="p-6 hover:bg-gray-50 transition-colors">
             <div className="flex items-start gap-4">
@@ -182,9 +184,9 @@ export default function ReviewsTab({ profile, isOwnProfile = false }: ReviewsTab
                 <div className="flex items-start justify-between mb-3">
                   <div>
                     <div className="flex items-center gap-2 mb-1">
-                      <h4 className="font-semibold text-gray-900">
+                      <Link href={`/dashboard/profile/${review.reviewer?.id}`} className="font-semibold text-gray-900">
                         {review.reviewer?.display_name || review.reviewer?.name || 'Anonymous User'}
-                      </h4>
+                      </Link>
                       {review.reviewer?.verification_status === 'verified' && (
                         <span className="px-1.5 py-0.5 bg-green-100 text-green-800 text-xs rounded-full font-medium">
                           Verified

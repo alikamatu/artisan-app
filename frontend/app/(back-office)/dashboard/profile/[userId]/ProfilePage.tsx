@@ -2,7 +2,6 @@
 
 import React, { useState } from 'react';
 import { usePublicProfile } from '@/lib/hooks/usePublicProfile';
-
 import ProfileNavigation from '@/_components/profile/ProfileNavigation';
 import OverviewTab from '@/_components/profile/tabs/OverviewTab';
 import PortfolioTab from '@/_components/profile/tabs/PortfolioTab';
@@ -19,7 +18,7 @@ interface ProfilePageProps {
 
 export default function ProfilePage({ userId, isOwnProfile = false }: ProfilePageProps) {
   const { profile, loading, error } = usePublicProfile(userId);
-  const [activeTab, setActiveTab] = useState<'overview' | 'reviews' | 'portfolio' | 'activity'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'reviews' | 'portfolio' | 'my-jobs'>('overview');
 
   if (loading) {
     return <LoadingState />;
@@ -56,7 +55,7 @@ export default function ProfilePage({ userId, isOwnProfile = false }: ProfilePag
       <div className="bg-white">
         <div className="max-w-7xl mx-auto px-4 py-8">
           <ProfileHeader profile={profile} isOwnProfile={isOwnProfile} />
-          <ProfileNavigation activeTab={activeTab} onTabChange={setActiveTab} />
+          <ProfileNavigation profile={profile} activeTab={activeTab} onTabChange={setActiveTab} />
         </div>
       </div>
 

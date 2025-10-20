@@ -44,14 +44,14 @@ export default function JobDetailPage({ jobId }: JobDetailProps) {
 
   const handleApplicationSuccess = () => {
     refetchStatus();
-    refetch(); // Refresh job data to update application count
+    refetch();
   };
 
   const canApply = () => {
     if (!user) return false;
     if (!job) return false;
     if (user.role !== 'worker') return false;
-    if (job.client_id === user.id) return false; // Can't apply to own job
+    if (job.client_id === user.id) return false;
     if (job.status !== 'open') return false;
     if (applicationStatus?.hasApplied) return false;
     
@@ -397,7 +397,7 @@ export default function JobDetailPage({ jobId }: JobDetailProps) {
                           <div className="flex-1">
                             <h4 className="text-lg font-bold text-gray-900">
                               <UserProfileLink 
-                                userId={job.client?.id}  // This should be the client's user ID
+                                userId={job.client?.id}
                                 userName={getDisplayName(job.client)}
                                 userPhoto={job.client?.profile_photo || getProfilePhoto(job.client)}
                                 showPhoto={false}
