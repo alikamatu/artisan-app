@@ -149,10 +149,18 @@ const WorkerProfessionalInfo = ({ onSubmit, onBack, initialData }: WorkerProfess
                   helperText="Choose the services you provide"
                 />
               )}
-              renderTags={(value, getTagProps) =>
-                value.map((option, index) => (
-                  <Chip variant="outlined" label={option} {...getTagProps({ index })} />
-                ))
+renderTags={(value, getTagProps) =>
+  value.map((option, index) => {
+    const { key, ...tagProps } = getTagProps({ index }); // remove key from spread
+    return (
+      <Chip
+        key={key} // pass key explicitly
+        variant="outlined"
+        label={option}
+        {...tagProps}
+      />
+    );
+  })
               }
             />
           </div>

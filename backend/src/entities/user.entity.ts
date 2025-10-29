@@ -27,7 +27,7 @@ export class User {
   @Column({ unique: false })
   email: string;
 
-  @Column({ nullable: false })
+  @Column({ nullable: true })
   phone: string;
 
   @Column({ nullable: true })
@@ -43,7 +43,7 @@ export class User {
   reset_token: string;
 
 
-  @Column()
+  @Column({ nullable: true })
   name: string;
 
   @Column({ nullable: true })
@@ -58,7 +58,7 @@ export class User {
   @Column('jsonb', { nullable: true })
   metadata: Record<string, any>;
 
-  @Column({ name: 'verification_level', default: 0 })
+  @Column({ name: 'verification_level', default: 3 })
   verificationLevel: number;
 
   @Column({ nullable: true })

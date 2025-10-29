@@ -18,9 +18,7 @@ import { useAuth } from '@/context/AuthContext';
 
 // Schema for form validation
 const signUpSchema = z.object({
-  name: z.string().min(2, 'Name must be at least 2 characters'),
   email: z.string().email('Please enter a valid email'),
-  phone: z.string().min(10, 'Phone number must be at least 10 digits'),
   password: z.string()
     .min(8, 'Password must be at least 8 characters')
     .regex(/[A-Z]/, 'Must contain at least one uppercase letter')
@@ -47,7 +45,7 @@ export default function SignUpForm({ onSuccess }: { onSuccess: (email: string) =
   const onSubmit = async (data: z.infer<typeof signUpSchema>) => {
     setIsLoading(true);
     try {
-      await authRegister(data.name, data.phone, data.email, data.password);
+      await authRegister(data.email, data.password);
       onSuccess(data.email);  // Pass email to success handler
       reset();  // Reset form after successful submission
     } catch (error) {
@@ -61,15 +59,6 @@ export default function SignUpForm({ onSuccess }: { onSuccess: (email: string) =
     <Box component="form" onSubmit={handleSubmit(onSubmit)} sx={{ py: 4 }}>
       <Stack spacing={3}>
         <TextField
-          {...register('name')}
-          label="Full Name"
-          variant="outlined"
-          fullWidth
-          error={!!errors.name}
-          helperText={errors.name?.message}
-        />
-
-        <TextField
           {...register('email')}
           label="Email Address"
           type="email"
@@ -77,16 +66,6 @@ export default function SignUpForm({ onSuccess }: { onSuccess: (email: string) =
           fullWidth
           error={!!errors.email}
           helperText={errors.email?.message}
-        />
-
-        <TextField
-          {...register('phone')}
-          label="Phone Number"
-          type="tel"
-          variant="outlined"
-          fullWidth
-          error={!!errors.phone}
-          helperText={errors.phone?.message}
         />
 
         <TextField

@@ -1,4 +1,3 @@
-// applications.service.ts
 import { 
   Injectable, 
   NotFoundException, 
@@ -24,7 +23,6 @@ export interface ApplicationResponse {
   id: string;
   job_id: string;
   worker_id: string;
-  cover_letter: string;
   proposed_budget: number;
   estimated_completion_time: string;
   availability_start_date: string;
@@ -664,7 +662,6 @@ export class ApplicationsService {
       id: application.id,
       job_id: application.job_id,
       worker_id: application.worker_id,
-      cover_letter: application.cover_letter,
       proposed_budget: parseFloat(application.proposed_budget),
       estimated_completion_time: application.estimated_completion_time,
       availability_start_date: application.availability_start_date,

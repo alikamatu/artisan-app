@@ -13,10 +13,17 @@ const RoleSelection = ({ onSelect }: RoleSelectionProps) => {
   const theme = useTheme();
   const [selectedRole, setSelectedRole] = useState<'client' | 'worker' | null>(null);
 
-  const handleRoleSelect = (role: 'client' | 'worker') => {
-    setSelectedRole(role);
-    setTimeout(() => onSelect(role), 300);
-  };
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+
+
+const handleRoleSelect = (role: 'client' | 'worker') => {
+  setSelectedRole(role);
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  user.role = role;
+  localStorage.setItem('user', JSON.stringify(user));
+  setTimeout(() => onSelect(role), 300);
+};
+
 
   const roles = [
     {

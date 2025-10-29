@@ -2,7 +2,7 @@
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
 import { CloudinaryService } from '../cloudinary/cloudinary.service';
-import { CompleteOnboardingDto, UpdateOnboardingStepDto, OnboardingRole } from '../auth/dto/onboarding.dto';
+import { CompleteOnboardingDto, UpdateOnboardingStepDto, OnboardingRole, WorkerBasicInfoDto } from '../auth/dto/onboarding.dto';
 
 @Injectable()
 export class OnboardingService {
@@ -301,36 +301,28 @@ export class OnboardingService {
       throw new BadRequestException(`Failed to create client profile: ${error.message}`);
     }
   }
+private async completeWorkerOnboarding(userId: string, data: CompleteOnboardingDto) {
+  const profile = data.profile || {} as WorkerBasicInfoDto;
 
-  private async completeWorkerOnboarding(userId: string, data: CompleteOnboardingDto) {
-    const workerProfileData = {
-      user_id: userId,
-      business_name: (data.profile as any).businessName,
-      description: data.professional?.description,
-      services: data.professional?.services || [],
-      hourly_rate: data.pricing?.hourlyRate,
-      available_days: data.pricing?.availableDays || [],
-      working_hours: data.pricing?.workingHours,
-      service_area: data.pricing?.serviceArea,
-      max_distance: data.pricing?.maxDistance,
-      skills: data.professional?.skills || [],
-      experience_years: this.parseExperience(data.professional?.experience),
-      certifications: data.professional?.certifications || [],
-      education: data.professional?.education,
-      verification_status: 'pending',
-      profile_image: data.profile.photo,
-      onboarding_completed: true,
-    };
-
-    const { error } = await this.supabase
-      .client
-      .from('worker_profile')
-      .upsert(workerProfileData);
-
-    if (error) {
-      throw new BadRequestException(`Failed to create worker profile: ${error.message}`);
-    }
-  }
+  const workerProfileData = {
+    user_id: userId,
+    business_name: 'businessName' in profile ? profile.businessName : '',
+    description: data.professional?.description,
+    services: data.professional?.services || [],
+    hourly_rate: data.pricing?.hourlyRate,
+    available_days: data.pricing?.availableDays || [],
+    working_hours: data.pricing?.workingHours,
+    service_area: data.pricing?.serviceArea,
+    max_distance: data.pricing?.maxDistance,
+    skills: data.professional?.skills || [],
+    experience_years: this.parseExperience(data.professional?.experience),
+    certifications: data.professional?.certifications || [],
+    education: data.professional?.education,
+    verification_status: 'pending',
+    profile_image: profile.photo,
+    onboarding_completed: true,
+  };
+}
 
   // Helper methods
   private async updateUserRole(userId: string, role: OnboardingRole) {

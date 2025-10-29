@@ -1,4 +1,3 @@
-// applications.controller.ts
 import { 
   Controller, 
   Get, 
@@ -27,12 +26,6 @@ export class ApplicationsController {
 
   constructor(private readonly applicationsService: ApplicationsService) {}
 
-  // ============ WORKER ROUTES ============
-
-  /**
-   * Apply to a job (workers only)
-   * POST /applications
-   */
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('worker')
   @Post()
@@ -44,10 +37,6 @@ export class ApplicationsController {
     return this.applicationsService.create(createApplicationDto, user.id);
   }
 
-  /**
-   * Get worker's own applications
-   * GET /applications/my-applications
-   */
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Get('my-applications')
   async getMyApplications(
@@ -69,10 +58,6 @@ async getMyJobsApplications(
   return this.applicationsService.getClientApplications(user.id, filters);
 }
 
-  /**
-   * Withdraw application (worker only)
-   * PATCH /applications/:id/withdraw
-   */
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('worker')
   @Patch(':id/withdraw')
@@ -84,12 +69,6 @@ async getMyJobsApplications(
     return this.applicationsService.withdrawApplication(id, user.id);
   }
 
-  // ============ CLIENT ROUTES ============
-
-  /**
-   * Get applications for a specific job (job owner only)
-   * GET /applications/job/:jobId
-   */
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('client')
   @Get('job/:jobId')
@@ -102,10 +81,6 @@ async getMyJobsApplications(
     return this.applicationsService.getJobApplications(jobId, user.id, filters);
   }
 
-  /**
-   * Accept application (job owner only)
-   * PATCH /applications/:id/accept
-   */
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('client')
   @Patch(':id/accept')
@@ -117,10 +92,6 @@ async getMyJobsApplications(
     return this.applicationsService.acceptApplication(id, user.id);
   }
 
-  /**
-   * Reject application (job owner only)
-   * PATCH /applications/:id/reject
-   */
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('client')
   @Patch(':id/reject')
@@ -133,12 +104,6 @@ async getMyJobsApplications(
     return this.applicationsService.rejectApplication(id, user.id, rejectData.reason);
   }
 
-  // ============ GENERAL ROUTES ============
-
-  /**
-   * Get single application (worker who applied or job owner)
-   * GET /applications/:id
-   */
   @UseGuards(JwtAuthGuard)
   @Get(':id')
   async findOne(@Param('id') id: string, @CurrentUser() user: User) {
@@ -146,10 +111,6 @@ async getMyJobsApplications(
     return this.applicationsService.findOne(id, user.id);
   }
 
-  /**
-   * Check if user has already applied to a job
-   * GET /applications/check/:jobId
-   */
   @UseGuards(JwtAuthGuard)
   @Get('check/:jobId')
   async checkApplicationExists(
@@ -158,19 +119,5 @@ async getMyJobsApplications(
   ) {
     this.logger.log(`Checking if user ${user.id} has applied to job ${jobId}`);
     return this.applicationsService.checkApplicationExists(jobId, user.id);
-  }
-
-  // ============ ADMIN ROUTES ============
-
-  /**
-   * Get all applications (admin only)
-   * GET /applications/admin/all
-   */
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('super_admin', 'hostel_admin')
-  @Get('admin/all')
-  async getAllApplicationsAdmin(@Query() filters: ApplicationFiltersDto) {
-    this.logger.log('Admin accessing all applications');
-    return this.applicationsService.findAll(filters);
   }
 }

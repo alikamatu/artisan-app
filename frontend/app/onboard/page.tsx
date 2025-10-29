@@ -150,7 +150,7 @@ export default function OnBoard() {
           if (completed) {
             setShowSuccess(true);
             setTimeout(() => {
-              router.push('/dashboard/user-profile');
+              router.push('/dashboard/profile');
             }, 2000);
           }
         } else {

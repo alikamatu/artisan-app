@@ -91,24 +91,24 @@ const WorkerPricingAvailability = ({ onSubmit, onBack }: WorkerPricingAvailabili
             <div className='w-full text-red-600 text-sm mb-2'>
               <TextField
                 fullWidth
-                label="Hourly Rate ($)"
+                label="Hourly Rate (₵)"
                 name="hourlyRate"
                 type="number"
                 value={formData.hourlyRate}
                 onChange={handleChange}
                 required
-                InputProps={{ startAdornment: <InputAdornment position="start">$</InputAdornment> }}
+                InputProps={{ startAdornment: <InputAdornment position="start">₵</InputAdornment> }}
               />
             </div>
             <div className='w-full text-red-600 text-sm mb-2'>
               <TextField
                 fullWidth
-                label="Project Rate ($)"
+                label="Project Rate (₵)"
                 name="projectRate"
                 type="number"
                 value={formData.projectRate}
                 onChange={handleChange}
-                InputProps={{ startAdornment: <InputAdornment position="start">$</InputAdornment> }}
+                InputProps={{ startAdornment: <InputAdornment position="start">₵</InputAdornment> }}
               />
             </div>
             <div className='w-full text-red-600 text-sm mb-2'>
@@ -131,6 +131,7 @@ const WorkerPricingAvailability = ({ onSubmit, onBack }: WorkerPricingAvailabili
                 value={formData.maxDistance}
                 onChange={handleChange}
                 InputProps={{ endAdornment: <InputAdornment position="end">km</InputAdornment> }}
+                inputProps={{min: 0}}
               />
             </div>
             <div className='w-full text-red-600 text-sm mb-2'>
@@ -183,36 +184,15 @@ const WorkerPricingAvailability = ({ onSubmit, onBack }: WorkerPricingAvailabili
             {formData.travelFee && (
               <TextField
                 fullWidth
-                label="Travel Fee Amount ($)"
+                label="Travel Fee Amount (₵)"
                 name="travelFeeAmount"
                 type="number"
                 value={formData.travelFeeAmount}
                 onChange={handleChange}
                 sx={{ mt: 2 }}
-                InputProps={{ startAdornment: <InputAdornment position="start">$</InputAdornment> }}
+                InputProps={{ startAdornment: <InputAdornment position="start">₵</InputAdornment> }}
               />
             )}
-          </Box>
-
-          <Box sx={{ mb: 4 }}>
-            <Typography variant="subtitle1" gutterBottom>Unavailable Dates</Typography>
-            <DatePicker
-              value={formData.unavailableDates[formData.unavailableDates.length - 1] || null}
-              onChange={handleDateAdd}
-              slotProps={{ textField: { fullWidth: true } }}
-            />
-            <Box sx={{ mt: 2, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-              {formData.unavailableDates.map((date, index) => (
-                <Chip
-                  key={index}
-                  label={format(date, 'MM/dd/yyyy')}
-                  onDelete={() => setFormData(prev => ({
-                    ...prev,
-                    unavailableDates: prev.unavailableDates.filter((_, i) => i !== index)
-                  }))}
-                />
-              ))}
-            </Box>
           </Box>
 
           <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 4 }}>

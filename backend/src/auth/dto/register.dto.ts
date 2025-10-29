@@ -17,17 +17,4 @@ export class RegisterDto {
 
   @IsEnum(['client', 'worker', 'admin'])
   role: string;
-
-  @IsOptional()
-  @IsString()
-  school_id?: string;
-
-  @IsOptional()
-  @IsString()
-  name?: string;
-
-  
-  @IsOptional()
-  @IsString()
-  phone?: string;
 }

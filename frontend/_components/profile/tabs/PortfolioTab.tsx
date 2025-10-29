@@ -1,6 +1,13 @@
+"use client";
+
 import React, { useState } from 'react';
 import { Briefcase, Image, File, Video, Plus, Heart, Share2, ExternalLink, Eye, Loader2 } from 'lucide-react';
 import { usePortfolio, usePortfolioActions } from '@/lib/hooks/usePortfolio';
+import Link from 'next/link';
+import { PortfolioCategory } from '@/lib/types/portfolio';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/context/AuthContext';
+import { toast } from 'sonner';
 
 interface PortfolioTabProps {
   profile: any;
@@ -10,6 +17,8 @@ interface PortfolioTabProps {
 export default function PortfolioTab({ profile, isOwnProfile = false }: PortfolioTabProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const router = useRouter();
+  const { user } = useAuth();
   
   // Fetch portfolio data
   const { 
@@ -20,25 +29,78 @@ export default function PortfolioTab({ profile, isOwnProfile = false }: Portfoli
     categories, 
     isLoading, 
     error, 
-    refetch 
+    refetch,
+    updateItem 
   } = usePortfolio({
     worker_id: profile.id,
     page: currentPage,
     limit: 12,
-    category: selectedCategory === 'all' ? undefined : selectedCategory,
+    category: selectedCategory === 'all' ? undefined : selectedCategory as PortfolioCategory,
     sort_by: 'created_at',
     sort_order: 'DESC'
   });
 
-  const { likePortfolio, deletePortfolio, uploadMedia } = usePortfolioActions();
+  const { likePortfolio, deletePortfolio } = usePortfolioActions();
 
-  // Handle like action
+  // Handle like action with optimistic updates
   const handleLike = async (itemId: string) => {
+    if (!user) {
+      toast.error('Please login to like portfolio items');
+      return;
+    }
+
+    const item = items.find(item => item.id === itemId);
+    if (!item) return;
+
+    // Optimistic update
+    const previousLikes = item.likes_count;
+    const previousLiked = item.has_liked;
+
+    updateItem(itemId, {
+      likes_count: previousLiked ? previousLikes - 1 : previousLikes + 1,
+      has_liked: !previousLiked
+    });
+
     try {
-      await likePortfolio(itemId);
-      refetch(); // Refresh the list to get updated like counts
+      const result = await likePortfolio(itemId);
+      // Update with actual response
+      updateItem(itemId, {
+        likes_count: result.likes_count,
+        has_liked: result.has_liked
+      });
     } catch (error) {
+      // Revert on error
+      updateItem(itemId, {
+        likes_count: previousLikes,
+        has_liked: previousLiked
+      });
       console.error('Failed to like portfolio item:', error);
+    }
+  };
+
+  // Handle share functionality
+  const handleShare = async (item: any) => {
+    const shareUrl = `${window.location.origin}/dashboard/profile/portfolio/${item.id}`;
+    const shareText = `Check out this portfolio item: ${item.title}`;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: item.title,
+          text: shareText,
+          url: shareUrl,
+        });
+      } catch (err) {
+        // Share was cancelled
+      }
+    } else {
+      // Fallback: copy to clipboard
+      try {
+        await navigator.clipboard.writeText(shareUrl);
+        toast.success('Link copied to clipboard!');
+      } catch (err) {
+        toast.error('Failed to copy link to clipboard');
+      }
     }
   };
 
@@ -75,7 +137,7 @@ export default function PortfolioTab({ profile, isOwnProfile = false }: Portfoli
   if (isLoading && items.length === 0) {
     return (
       <div className="space-y-6">
-        <div className="bg-white rounded-lg border p-6">
+        <div className="bg-white rounded-lg  p-6">
           <div className="flex items-center justify-between mb-6">
             <div>
               <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
@@ -96,7 +158,7 @@ export default function PortfolioTab({ profile, isOwnProfile = false }: Portfoli
   if (error && items.length === 0) {
     return (
       <div className="space-y-6">
-        <div className="bg-white rounded-lg border p-6">
+        <div className="bg-white rounded-lg  p-6">
           <div className="text-center py-12">
             <Briefcase className="h-16 w-16 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-gray-900 mb-2">Failed to Load Portfolio</h3>
@@ -116,7 +178,7 @@ export default function PortfolioTab({ profile, isOwnProfile = false }: Portfoli
   return (
     <div className="space-y-6">
       {/* Portfolio Header */}
-      <div className="bg-white rounded-lg border p-6">
+      <div className="bg-white rounded-lg  p-6">
         <div className="flex items-center justify-between mb-6">
           <div>
             <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
@@ -132,10 +194,12 @@ export default function PortfolioTab({ profile, isOwnProfile = false }: Portfoli
           </div>
           
           {isOwnProfile && (
-            <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-              <Plus className="h-4 w-4" />
-              Add Project
-            </button>
+            <Link href="/dashboard/profile/portfolio/add">
+              <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                <Plus className="h-4 w-4" />
+                Add Project
+              </button>
+            </Link>
           )}
         </div>
 
@@ -194,48 +258,49 @@ export default function PortfolioTab({ profile, isOwnProfile = false }: Portfoli
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {items.map((item) => (
-              <div key={item.id} className="bg-white rounded-lg border overflow-hidden hover:shadow-lg transition-shadow duration-300 group">
+              <div key={item.id} className="bg-white rounded-lg  overflow-hidden hover:shadow-lg transition-shadow duration-300 group">
                 {/* Project Image/Media */}
-                <div 
-                  className="relative h-48 bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-white bg-cover bg-center"
-                  style={{ 
-                    backgroundImage: item.media_urls?.[0] ? `url(${item.media_urls[0]})` : undefined 
-                  }}
-                >
-                  {!item.media_urls?.[0] && getMediaIcon(item.type)}
-                  
-                  {/* Overlay on hover */}
-                  <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-all duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
-                    <div className="flex items-center gap-3">
-                      <button className="p-2 bg-white bg-opacity-90 rounded-full hover:bg-opacity-100 transition-all">
-                        <Eye className="h-5 w-5 text-gray-700" />
-                      </button>
-                      <button className="p-2 bg-white bg-opacity-90 rounded-full hover:bg-opacity-100 transition-all">
-                        <ExternalLink className="h-5 w-5 text-gray-700" />
-                      </button>
+                <Link href={`/dashboard/profile/portfolio/${item.id}`}>
+                  <div 
+                    className="relative h-48 bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-white bg-cover bg-center cursor-pointer"
+                    style={{ 
+                      backgroundImage: item.media_urls?.[0] ? `url(${item.media_urls[0]})` : undefined 
+                    }}
+                  >
+                    {!item.media_urls?.[0] && getMediaIcon(item.type)}
+                    
+                    {/* Overlay on hover */}
+                    <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-all duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
+                      <div className="flex items-center gap-3">
+                        <button className="p-2 bg-white bg-opacity-90 rounded-full hover:bg-opacity-100 transition-all">
+                          <Eye className="h-5 w-5 text-gray-700" />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Image count badge */}
+                    {item.media_urls && item.media_urls.length > 1 && (
+                      <div className="absolute top-3 right-3 bg-black bg-opacity-60 text-white px-2 py-1 rounded-full text-xs">
+                        {item.media_urls.length} photos
+                      </div>
+                    )}
+
+                    {/* Category badge */}
+                    <div className="absolute top-3 left-3 bg-blue-600 text-white px-2 py-1 rounded-full text-xs font-medium">
+                      {formatCategory(item.category)}
                     </div>
                   </div>
-
-                  {/* Image count badge */}
-                  {item.media_urls && item.media_urls.length > 1 && (
-                    <div className="absolute top-3 right-3 bg-black bg-opacity-60 text-white px-2 py-1 rounded-full text-xs">
-                      {item.media_urls.length} photos
-                    </div>
-                  )}
-
-                  {/* Category badge */}
-                  <div className="absolute top-3 left-3 bg-blue-600 text-white px-2 py-1 rounded-full text-xs font-medium">
-                    {formatCategory(item.category)}
-                  </div>
-                </div>
+                </Link>
 
                 {/* Project Info */}
                 <div className="p-4">
-                  <div className="flex items-start justify-between mb-2">
-                    <h3 className="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
-                      {item.title}
-                    </h3>
-                  </div>
+                  <Link href={`/dashboard/profile/portfolio/${item.id}`}>
+                    <div className="flex items-start justify-between mb-2 cursor-pointer">
+                      <h3 className="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
+                        {item.title}
+                      </h3>
+                    </div>
+                  </Link>
                   
                   <p className="text-gray-600 text-sm mb-3 line-clamp-2">
                     {item.description}
@@ -252,7 +317,7 @@ export default function PortfolioTab({ profile, isOwnProfile = false }: Portfoli
                     
                     <div className="flex items-center gap-3">
                       <div className="flex items-center gap-1">
-                        <Heart className="h-4 w-4" />
+                        <Heart className={`h-4 w-4 ${item.has_liked ? 'fill-current text-red-500' : ''}`} />
                         <span>{item.likes_count}</span>
                       </div>
                       <div className="flex items-center gap-1">
@@ -263,23 +328,34 @@ export default function PortfolioTab({ profile, isOwnProfile = false }: Portfoli
                   </div>
 
                   {/* Action Buttons */}
-                  <div className="flex items-center gap-2 mt-4 pt-4 border-t">
+                  <div className="flex items-center gap-2 mt-4 pt-4 -t">
                     <button 
                       onClick={() => handleLike(item.id)}
+                      disabled={!user}
+                      className={`flex-1 flex items-center justify-center gap-1 py-2 rounded-lg transition-colors ${
+                        item.has_liked
+                          ? 'text-red-600 bg-red-50 hover:bg-red-100'
+                          : 'text-gray-600 hover:text-blue-600 hover:bg-blue-50'
+                      } ${!user ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    >
+                      <Heart className={`h-4 w-4 ${item.has_liked ? 'fill-current' : ''}`} />
+                      <span className="text-sm">{item.has_liked ? 'Liked' : 'Like'}</span>
+                    </button>
+                    
+                    <button 
+                      onClick={() => handleShare(item)}
                       className="flex-1 flex items-center justify-center gap-1 py-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                     >
-                      <Heart className="h-4 w-4" />
-                      <span className="text-sm">Like</span>
-                    </button>
-                    <button className="flex-1 flex items-center justify-center gap-1 py-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
                       <Share2 className="h-4 w-4" />
                       <span className="text-sm">Share</span>
                     </button>
                     
                     {isOwnProfile && (
-                      <button className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
-                        <Plus className="h-4 w-4" />
-                      </button>
+                      <Link href={`/dashboard/profile/portfolio/edit/${item.id}`}>
+                        <button className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
+                          <ExternalLink className="h-4 w-4" />
+                        </button>
+                      </Link>
                     )}
                   </div>
                 </div>
@@ -293,7 +369,7 @@ export default function PortfolioTab({ profile, isOwnProfile = false }: Portfoli
               <button
                 onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                 disabled={currentPage === 1}
-                className="px-4 py-2 border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                className="px-4 py-2  -gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
               >
                 Previous
               </button>
@@ -303,7 +379,7 @@ export default function PortfolioTab({ profile, isOwnProfile = false }: Portfoli
               <button
                 onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                 disabled={currentPage === totalPages}
-                className="px-4 py-2 border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                className="px-4 py-2  -gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
               >
                 Next
               </button>
@@ -312,7 +388,7 @@ export default function PortfolioTab({ profile, isOwnProfile = false }: Portfoli
         </>
       ) : (
         /* Empty State */
-        <div className="bg-white rounded-lg border p-12 text-center">
+        <div className="bg-white rounded-lg  p-12 text-center">
           <Briefcase className="h-16 w-16 text-gray-400 mx-auto mb-4" />
           <h3 className="text-lg font-semibold text-gray-900 mb-2">
             {isOwnProfile ? 'No Portfolio Items Yet' : 'No Portfolio Items'}
@@ -324,17 +400,19 @@ export default function PortfolioTab({ profile, isOwnProfile = false }: Portfoli
             }
           </p>
           {isOwnProfile && (
-            <button className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium">
-              <Plus className="h-5 w-5" />
-              Add Your First Project
-            </button>
+            <Link href="/dashboard/profile/portfolio/add">
+              <button className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium">
+                <Plus className="h-5 w-5" />
+                Add Your First Project
+              </button>
+            </Link>
           )}
         </div>
       )}
 
       {/* Portfolio Tips for Owners */}
       {isOwnProfile && items.length === 0 && (
-        <div className="bg-blue-50 rounded-lg border border-blue-200 p-6">
+        <div className="bg-blue-50 rounded-lg  -blue-200 p-6">
           <h4 className="font-semibold text-blue-900 mb-3">Tips for a Great Portfolio</h4>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
             <div className="flex items-start gap-3">

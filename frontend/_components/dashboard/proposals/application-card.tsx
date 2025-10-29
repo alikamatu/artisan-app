@@ -79,13 +79,6 @@ export const ApplicationCard: React.FC<ApplicationCardProps> = ({
       {/* Expanded Content */}
       {isExpanded && (
         <div className="border-t border-gray-200 p-4">
-          {/* Cover Letter */}
-          <div className="mb-4">
-            <h5 className="font-medium text-gray-900 mb-2">Cover Letter</h5>
-            <p className="text-gray-700 text-sm leading-relaxed">
-              {application.cover_letter}
-            </p>
-          </div>
 
           {/* Application Details */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">

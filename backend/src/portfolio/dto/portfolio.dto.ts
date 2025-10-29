@@ -42,6 +42,10 @@ export class CreatePortfolioDto {
 
   @IsString()
   @IsOptional()
+  testimonials?: string;
+
+  @IsString()
+  @IsOptional()
   duration?: string;
 
   @IsString()

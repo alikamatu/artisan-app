@@ -77,11 +77,8 @@ export interface JobApplication {
 
 export interface CreateApplicationData {
   job_id: string;
-  cover_letter: string;
   proposed_budget: number;
-  estimated_completion_time: string;
   completion_date?: string;
-  availability_start_date: string;
 }
 
 export interface ApplicationListResponse {

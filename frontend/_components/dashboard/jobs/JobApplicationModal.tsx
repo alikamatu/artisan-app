@@ -16,11 +16,8 @@ interface JobApplicationModalProps {
 export default function JobApplicationModal({ job, isOpen, onClose, onSuccess }: JobApplicationModalProps) {
   const { createApplication, isLoading, error, clearError } = useCreateApplication();
   const [formData, setFormData] = useState({
-    cover_letter: '',
     proposed_budget: job.budget_min || 0,
-    estimated_completion_time: '',
     completion_date: '',
-    availability_start_date: new Date().toISOString().split('T')[0]
   });
   const [showSuccess, setShowSuccess] = useState(false);
 
@@ -28,18 +25,12 @@ export default function JobApplicationModal({ job, isOpen, onClose, onSuccess }:
     e.preventDefault();
     clearError();
 
-    if (!formData.cover_letter.trim()) {
-      return;
-    }
 
     try {
       const applicationData: CreateApplicationData = {
         job_id: job.id,
-        cover_letter: formData.cover_letter.trim(),
         proposed_budget: formData.proposed_budget,
-        estimated_completion_time: formData.estimated_completion_time,
         completion_date: formData.completion_date,
-        availability_start_date: formData.availability_start_date
       };
 
       await createApplication(applicationData);
@@ -51,11 +42,8 @@ export default function JobApplicationModal({ job, isOpen, onClose, onSuccess }:
         setShowSuccess(false);
         // Reset form
         setFormData({
-          cover_letter: '',
           proposed_budget: job.budget_min || 0,
-          estimated_completion_time: '',
           completion_date: '',
-          availability_start_date: new Date().toISOString().split('T')[0]
         });
       }, 2000);
     } catch (err) {
@@ -137,27 +125,6 @@ export default function JobApplicationModal({ job, isOpen, onClose, onSuccess }:
 
           {/* Application Form */}
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Cover Letter */}
-            <div>
-              <label className="block text-sm font-semibold text-gray-900 mb-2">
-                Cover Letter *
-              </label>
-              <div className="relative">
-                <textarea
-                  value={formData.cover_letter}
-                  onChange={(e) => handleInputChange('cover_letter', e.target.value)}
-                  placeholder="Tell the client why you're the perfect fit for this job. Highlight your relevant experience, skills, and approach to completing this work..."
-                  rows={6}
-                  maxLength={2000}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  disabled={isLoading || showSuccess}
-                  required
-                />
-                <div className="absolute bottom-3 right-3 text-xs text-gray-400">
-                  {formData.cover_letter.length}/2000
-                </div>
-              </div>
-            </div>
 
             {/* Proposed Budget */}
             <div>
@@ -183,22 +150,6 @@ export default function JobApplicationModal({ job, isOpen, onClose, onSuccess }:
               </p>
             </div>
 
-            {/* Estimated Completion Time */}
-            <div>
-              <label className="block text-sm font-semibold text-gray-900 mb-2">
-                Estimated Completion Time *
-              </label>
-              <input
-                type="text"
-                value={formData.estimated_completion_time}
-                onChange={(e) => handleInputChange('estimated_completion_time', e.target.value)}
-                placeholder="e.g., 2-3 days, 1 week, 2 hours"
-                maxLength={200}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                disabled={isLoading || showSuccess}
-                required
-              />
-            </div>
 
             {/* Completion Date */}
             <div>
@@ -215,22 +166,6 @@ export default function JobApplicationModal({ job, isOpen, onClose, onSuccess }:
                 required
               />
             </div>  
-
-            {/* Availability Start Date */}
-            <div>
-              <label className="block text-sm font-semibold text-gray-900 mb-2">
-                When can you start? *
-              </label>
-              <input
-                type="date"
-                value={formData.availability_start_date}
-                onChange={(e) => handleInputChange('availability_start_date', e.target.value)}
-                min={new Date().toISOString().split('T')[0]}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                disabled={isLoading || showSuccess}
-                required
-              />
-            </div>
 
             {/* Error Message */}
             {error && (
@@ -256,7 +191,7 @@ export default function JobApplicationModal({ job, isOpen, onClose, onSuccess }:
               <button
                 type="submit"
                 className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors font-medium flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                disabled={isLoading || showSuccess || !formData.cover_letter.trim()}
+                disabled={isLoading || showSuccess}
               >
                 {isLoading ? (
                   <>

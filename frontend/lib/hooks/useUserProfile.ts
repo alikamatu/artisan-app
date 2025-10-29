@@ -8,6 +8,7 @@ interface ProfileData {
   lastName?: string;
   firstName?: string;
   profilePhoto: string;
+  totalEarnings?: number;
   businessName?: string;
     profile: {
     name?: string;
@@ -69,6 +70,7 @@ interface UserProfileData {
   role: 'client' | 'worker';
   region?: string;
   profilePhoto?: string;
+  totalViews?: number;
   targetProfile?: string;
   isVerified?: boolean;
   verificationLevel?: number;

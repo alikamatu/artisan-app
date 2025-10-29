@@ -251,10 +251,12 @@ export class PortfolioService {
         throw new ForbiddenException('You can only update your own portfolio items');
       }
 
-      const updateData = {
-        ...updatePortfolioDto,
-        updated_at: new Date().toISOString()
-      };
+        const { worker, metadata, ...dto } = updatePortfolioDto as any;
+
+        const updateData = {
+          ...dto,
+          updated_at: new Date().toISOString(),
+        };
 
       const { data: updatedPortfolio, error } = await this.supabase
         .client

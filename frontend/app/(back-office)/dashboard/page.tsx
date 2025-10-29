@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
   PlusCircle, 
@@ -15,7 +15,12 @@ import {
   ArrowRight,
   Calendar,
   User,
+  Menu,
 } from 'lucide-react';
+import { useUserProfile } from '@/lib/hooks/useUserProfile';
+import { useMyJobs, useJobs } from '@/lib/hooks/useJob';
+import { useBookings } from '@/lib/hooks/useBookings';
+import { JobStatus, JobUrgency } from '@/lib/types/jobs';
 
 interface DashboardStats {
   totalJobs: number;
@@ -29,11 +34,11 @@ interface DashboardStats {
 interface RecentJob {
   id: string;
   title: string;
-  location: string;
+  location: any;
   budget_min: number;
   budget_max: number;
-  urgency: string;
-  status: string;
+  urgency: JobUrgency;
+  status: JobStatus;
   views_count: number;
   applications_count: number;
   created_at: string;
@@ -41,151 +46,132 @@ interface RecentJob {
 
 export default function DashboardPage() {
   const router = useRouter();
-  const [currentUser, setCurrentUser] = useState<any>(null);
+  const { profile: currentUser, loading: userLoading } = useUserProfile();
+  const { jobs: clientJobs, isLoading: jobsLoading } = useMyJobs({ limit: 5 });
+  const { jobs: availableJobs, isLoading: availableJobsLoading } = useJobs({ 
+    limit: 5, 
+    status: 'open' as JobStatus
+  });
+  const { bookings, isLoading: bookingsLoading } = useBookings({ limit: 10 });
+
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [recentJobs, setRecentJobs] = useState<RecentJob[]>([]);
-  const [loading, setLoading] = useState(true);
 
+  // Calculate stats based on user role and data
   useEffect(() => {
-    initializeDashboard();
-  }, []);
+    if (!currentUser) return;
 
-  const initializeDashboard = async () => {
-    try {
-      const token = localStorage.getItem('access_token');
-      if (!token) {
-        router.push('/sign-in');
-        return;
-      }
+    if (currentUser.role === 'client') {
+      // Client stats
+      const totalJobs = clientJobs?.length || 0;
+      const activeJobs = clientJobs?.filter(job => 
+        job.status === 'open' || job.status === 'in_progress'
+      ).length || 0;
+      const completedJobs = clientJobs?.filter(job => 
+        job.status === 'completed'
+      ).length || 0;
+      const totalViews = clientJobs?.reduce((sum, job) => 
+        sum + (job.views_count || 0), 0
+      ) || 0;
 
-      // Get current user
-      const userResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/me`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+      setStats({
+        totalJobs,
+        activeJobs,
+        completedJobs,
+        totalEarnings: currentUser.profile?.totalEarnings || 0,
+        averageRating: currentUser.averageRating || 0,
+        totalViews,
       });
 
-      if (!userResponse.ok) {
-        throw new Error('Failed to get user info');
-      }
+      setRecentJobs(clientJobs || []);
+    } else if (currentUser.role === 'worker') {
+      // Worker stats
+      const workerBookings = bookings || [];
+      const totalJobs = workerBookings.length;
+      const activeJobs = workerBookings.filter(booking => 
+        ['active', 'in_progress'].includes(booking.status as unknown as string)
+      ).length;
+      const completedJobs = workerBookings.filter(booking => 
+        booking.status === 'completed'
+      ).length;
+      const totalEarnings = workerBookings
+        .filter(booking => booking.status === 'completed')
+        .reduce((sum, booking) => sum + (booking.final_budget || booking.agreed_budget || 0), 0);
 
-      const userData = await userResponse.json();
-      setCurrentUser(userData);
-
-      // Load appropriate dashboard data based on user role
-      if (userData.role === 'client') {
-        await loadClientDashboard(token);
-      } else if (userData.role === 'worker') {
-        await loadWorkerDashboard(token);
-      }
-    } catch (error) {
-      console.error('Failed to initialize dashboard:', error);
-      router.push('/auth/login');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadClientDashboard = async (token: string) => {
-    try {
-      // Get client's jobs
-      const jobsResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/jobs/client/my-jobs?limit=5`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+      setStats({
+        totalJobs,
+        activeJobs,
+        completedJobs,
+        totalEarnings,
+        averageRating: currentUser.averageRating || currentUser.rating || 0,
+        totalViews: currentUser.totalViews || 0,
       });
 
-      if (jobsResponse.ok) {
-        const jobsData = await jobsResponse.json();
-        setRecentJobs(jobsData.jobs || []);
+      setRecentJobs(availableJobs || []);
+    }
+  }, [currentUser, clientJobs, availableJobs, bookings]);
 
-        // Calculate stats from jobs
-        const jobs = jobsData.jobs || [];
-        const stats: DashboardStats = {
-          totalJobs: jobs.length,
-          activeJobs: jobs.filter((job: any) => job.status === 'open' || job.status === 'in_progress').length,
-          completedJobs: jobs.filter((job: any) => job.status === 'completed').length,
-          totalEarnings: 0, 
-          averageRating: 4.2,
-          totalViews: jobs.reduce((sum: number, job: any) => sum + (job.views_count || 0), 0)
-        };
-        setStats(stats);
+  const formatLocationDisplay = (location: any) => {
+    if (!location) return 'Location not specified';
+    
+    if (typeof location === 'string') {
+      return location;
+    }
+    
+    if (typeof location === 'object') {
+      const { city, region, specific_address, address } = location;
+      
+      if (specific_address) return specific_address;
+      if (address) return address;
+      if (city && region) {
+        return `${city}, ${typeof region === 'string' ? region.split('_').map((word: string) => 
+          word.charAt(0).toUpperCase() + word.slice(1)).join(' ') : region}`;
       }
-    } catch (error) {
-      console.error('Failed to load client dashboard:', error);
+      return city || region || 'Location not specified';
     }
+    
+    return 'Location not specified';
   };
 
-const formatLocationDisplay = (location: any) => {
-  if (!location) return 'Location not specified';
-  
-  if (typeof location === 'string') {
-    return location;
-  }
-  
-  if (typeof location === 'object') {
-    const { city, region, specific_address } = location;
-    if (city && region) {
-      return `${city}, ${region.split('_').map((word: string) => 
-        word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}`;
-    }
-    return city || region || 'Location not specified';
-  }
-  
-  return 'Location not specified';
-};
-
-  const loadWorkerDashboard = async (token: string) => {
-    try {
-      // Get recent jobs for workers to browse
-      const jobsResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/jobs?limit=5&status=open`);
-
-      if (jobsResponse.ok) {
-        const jobsData = await jobsResponse.json();
-        setRecentJobs(jobsData.jobs || []);
-
-        // Worker stats would come from their applications and completed work
-        const stats: DashboardStats = {
-          totalJobs: 0, // Applied jobs
-          activeJobs: 0, // Active contracts
-          completedJobs: 0, // Completed work
-          totalEarnings: 0,
-          averageRating: 4.5,
-          totalViews: 0
-        };
-        setStats(stats);
-      }
-    } catch (error) {
-      console.error('Failed to load worker dashboard:', error);
-    }
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric'
-    });
-  };
+  const loading = userLoading || jobsLoading || availableJobsLoading || bookingsLoading;
 
   const getUrgencyColor = (urgency: string) => {
-    const colors = {
+    const colors: Record<string, string> = {
       low: 'text-green-600 bg-green-50',
       medium: 'text-yellow-600 bg-yellow-50',
       high: 'text-orange-600 bg-orange-50',
       urgent: 'text-red-600 bg-red-50'
     };
-    return colors[urgency as keyof typeof colors] || 'text-gray-600 bg-gray-50';
+    return colors[urgency] || 'text-gray-600 bg-gray-50';
   };
 
   const getStatusColor = (status: string) => {
-    const colors = {
+    const colors: Record<string, string> = {
       open: 'text-green-600 bg-green-100',
       in_progress: 'text-blue-600 bg-blue-100',
       completed: 'text-gray-600 bg-gray-100',
-      cancelled: 'text-red-600 bg-red-100'
+      cancelled: 'text-red-600 bg-red-100',
+      pending: 'text-yellow-600 bg-yellow-100',
+      active: 'text-blue-600 bg-blue-100'
     };
-    return colors[status as keyof typeof colors] || 'text-gray-600 bg-gray-100';
+    return colors[status] || 'text-gray-600 bg-gray-100';
   };
+
+  // Calculate profile completion percentage for workers
+  const profileCompletion = useMemo(() => {
+    if (currentUser?.role !== 'worker') return 0;
+
+    let completedFields = 0;
+    const totalFields = 5; // photo, skills, description, pricing, verification
+
+    if (currentUser.profilePhoto || currentUser.profile?.profilePhoto) completedFields++;
+    if (currentUser.professional?.skills?.length) completedFields++;
+    if (currentUser.professional?.description) completedFields++;
+    if (currentUser.pricing?.hourly_rate) completedFields++;
+    if (currentUser.verification?.verification_status === 'verified') completedFields++;
+
+    return Math.round((completedFields / totalFields) * 100);
+  }, [currentUser]);
 
   if (loading) {
     return (
@@ -199,7 +185,19 @@ const formatLocationDisplay = (location: any) => {
   }
 
   if (!currentUser) {
-    return null;
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-gray-600 mb-4">Unable to load user data</p>
+          <button
+            onClick={() => router.push('/auth/login')}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Sign In
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -208,7 +206,7 @@ const formatLocationDisplay = (location: any) => {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-gray-900">
-            Welcome back, {currentUser.name}!
+            Welcome back, {currentUser.name || currentUser.profile?.firstName || 'User'}!
           </h1>
           <p className="text-gray-600">
             {currentUser.role === 'client' 
@@ -232,7 +230,7 @@ const formatLocationDisplay = (location: any) => {
                   <span className="font-medium">Post New Job</span>
                 </button>
                 <button
-                  onClick={() => router.push('/dashboard/jobs/booking')}
+                  onClick={() => router.push('/dashboard/jobs/bookings')}
                   className="flex items-center gap-3 p-4 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
                 >
                   <Briefcase className="h-5 w-5" />
@@ -242,7 +240,7 @@ const formatLocationDisplay = (location: any) => {
                   onClick={() => router.push('/dashboard/jobs/applications')}
                   className="flex items-center gap-3 p-4 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
                 >
-                  <Users className="h-5 w-5" />
+                  <Menu className="h-5 w-5" />
                   <span className="font-medium">Applications</span>
                 </button>
                 <button
@@ -267,10 +265,10 @@ const formatLocationDisplay = (location: any) => {
                   className="flex items-center gap-3 p-4 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
                 >
                   <Users className="h-5 w-5" />
-                  <span className="font-medium">My Works</span>
+                  <span className="font-medium">My Bookings</span>
                 </button>
                 <button
-                  onClick={() => router.push('/dashboard/worker-applications')}
+                  onClick={() => router.push('/dashboard/applications')}
                   className="flex items-center gap-3 p-4 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
                 >
                   <Clock className="h-5 w-5" />
@@ -296,7 +294,9 @@ const formatLocationDisplay = (location: any) => {
               <div className="bg-white p-4 rounded-lg border border-gray-200">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-600">Total Jobs</p>
+                    <p className="text-sm text-gray-600">
+                      {currentUser.role === 'client' ? 'Total Jobs' : 'Total Bookings'}
+                    </p>
                     <p className="text-2xl font-bold text-gray-900">{stats.totalJobs}</p>
                   </div>
                   <Briefcase className="h-8 w-8 text-blue-600" />
@@ -337,7 +337,9 @@ const formatLocationDisplay = (location: any) => {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-gray-600">Rating</p>
-                    <p className="text-2xl font-bold text-gray-900">{stats.averageRating}</p>
+                    <p className="text-2xl font-bold text-gray-900">
+                      {stats.averageRating ? stats.averageRating.toFixed(1) : 'N/A'}
+                    </p>
                   </div>
                   <Star className="h-8 w-8 text-yellow-500" />
                 </div>
@@ -346,8 +348,12 @@ const formatLocationDisplay = (location: any) => {
               <div className="bg-white p-4 rounded-lg border border-gray-200">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-600">Earnings</p>
-                    <p className="text-2xl font-bold text-gray-900">GHS {stats.totalEarnings.toLocaleString()}</p>
+                    <p className="text-sm text-gray-600">
+                      {currentUser.role === 'client' ? 'Total Spent' : 'Total Earnings'}
+                    </p>
+                    <p className="text-2xl font-bold text-gray-900">
+                      GHS {stats.totalEarnings.toLocaleString()}
+                    </p>
                   </div>
                   <DollarSign className="h-8 w-8 text-green-600" />
                 </div>
@@ -363,7 +369,9 @@ const formatLocationDisplay = (location: any) => {
               {currentUser.role === 'client' ? 'Recent Jobs' : 'Available Opportunities'}
             </h2>
             <button
-              onClick={() => router.push(currentUser.role === 'client' ? '/dashboard/jobs/my-jobs' : '/dashboard/jobs')}
+              onClick={() => router.push(
+                currentUser.role === 'client' ? '/dashboard/jobs/my-jobs' : '/dashboard/jobs'
+              )}
               className="flex items-center gap-1 text-blue-600 hover:text-blue-700 transition-colors"
             >
               <span>View all</span>
@@ -386,7 +394,7 @@ const formatLocationDisplay = (location: any) => {
                 </p>
                 {currentUser.role === 'client' && (
                   <button
-                    onClick={() => router.push('/dashboard/jobs/create')}
+                    onClick={() => router.push('/dashboard/jobs/create-job')}
                     className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                   >
                     <PlusCircle className="h-4 w-4" />
@@ -411,34 +419,37 @@ const formatLocationDisplay = (location: any) => {
                           {job.urgency}
                         </span>
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(job.status)}`}>
-                          {job.status}
+                          {job.status.replace('_', ' ')}
                         </span>
                       </div>
                     </div>
                     
-                    <div className="flex items-center gap-4 text-sm text-gray-600 mb-2">
+                    <div className="flex items-center gap-4 text-sm text-gray-600 mb-2 flex-wrap">
                       <div className="flex items-center gap-1">
                         <MapPin className="h-4 w-4" />
-                        <span>{formatLocationDisplay(job.location)}</span> {/* Changed this line */}
+                        <span>{formatLocationDisplay(job.location)}</span>
                       </div>
                       <div className="flex items-center gap-1">
                         <DollarSign className="h-4 w-4" />
-                        <span>GHS {job.budget_min.toLocaleString()} - GHS {job.budget_max.toLocaleString()}</span>
+                        <span>GHS {job.budget_min?.toLocaleString()} - GHS {job.budget_max?.toLocaleString()}</span>
                       </div>
                       <div className="flex items-center gap-1">
                         <Eye className="h-4 w-4" />
-                        <span>{job.views_count} views</span>
+                        <span>{job.views_count || 0} views</span>
                       </div>
                       <div className="flex items-center gap-1">
                         <Users className="h-4 w-4" />
-                        <span>{job.applications_count} applications</span>
+                        <span>{job.applications_count || 0} applications</span>
                       </div>
                     </div>
                     
                     <div className="flex items-center justify-between text-sm text-gray-500">
                       <div className="flex items-center gap-1">
                         <Calendar className="h-4 w-4" />
-                        <span>Posted {formatDate(job.created_at)}</span>
+                        <span>Posted {new Date(job.created_at).toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric'
+                        })}</span>
                       </div>
                       <ArrowRight className="h-4 w-4" />
                     </div>
@@ -456,27 +467,29 @@ const formatLocationDisplay = (location: any) => {
             <div className="bg-white rounded-lg border border-gray-200 p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h3>
               <div className="space-y-4">
-                <div className="flex items-start gap-3">
-                  <div className="w-2 h-2 bg-blue-600 rounded-full mt-2"></div>
-                  <div>
-                    <p className="text-sm text-gray-900">Job &quot;Plumber needed for kitchen renovation&quot; received 3 new applications</p>
-                    <p className="text-xs text-gray-500">2 hours ago</p>
+                {bookings?.slice(0, 3).map((booking) => (
+                  <div key={booking.id} className="flex items-start gap-3">
+                    <div className={`w-2 h-2 rounded-full mt-2 ${
+                      booking.status === 'completed' ? 'bg-green-600' :
+                      booking.status === 'active' ? 'bg-blue-600' :
+                      'bg-orange-600'
+                    }`}></div>
+                    <div>
+                      <p className="text-sm text-gray-900">
+                        Booking for &quot;{booking.job?.title}&quot; - {booking.status.replace('_', ' ')}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {new Date(booking.updated_at).toLocaleDateString()} at{' '}
+                        {new Date(booking.updated_at).toLocaleTimeString()}
+                      </p>
+                    </div>
                   </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <div className="w-2 h-2 bg-green-600 rounded-full mt-2"></div>
-                  <div>
-                    <p className="text-sm text-gray-900">Contract with John Doe has been completed</p>
-                    <p className="text-xs text-gray-500">1 day ago</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <div className="w-2 h-2 bg-orange-600 rounded-full mt-2"></div>
-                  <div>
-                    <p className="text-sm text-gray-900">New message from Sarah about &quot;Garden landscaping&quot; project</p>
-                    <p className="text-xs text-gray-500">2 days ago</p>
-                  </div>
-                </div>
+                ))}
+                {(!bookings || bookings.length === 0) && (
+                  <p className="text-sm text-gray-500 text-center py-4">
+                    No recent activity
+                  </p>
+                )}
               </div>
             </div>
 
@@ -524,54 +537,123 @@ const formatLocationDisplay = (location: any) => {
               <div className="mb-4">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm text-gray-600">Profile Completion</span>
-                  <span className="text-sm font-medium text-gray-900">75%</span>
+                  <span className="text-sm font-medium text-gray-900">{profileCompletion}%</span>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div className="bg-blue-600 h-2 rounded-full" style={{ width: '75%' }}></div>
+                  <div 
+                    className="bg-blue-600 h-2 rounded-full transition-all duration-300" 
+                    style={{ width: `${profileCompletion}%` }}
+                  ></div>
                 </div>
               </div>
               <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-700">Add profile photo</span>
-                  <button className="text-blue-600 text-sm hover:text-blue-700">Add</button>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-700">Upload portfolio</span>
-                  <button className="text-blue-600 text-sm hover:text-blue-700">Upload</button>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-700">Get verified</span>
-                  <button className="text-blue-600 text-sm hover:text-blue-700">Start</button>
-                </div>
+                {!currentUser.profilePhoto && !currentUser.profile?.profilePhoto && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-700">Add profile photo</span>
+                    <button 
+                      onClick={() => router.push('/dashboard/profile')}
+                      className="text-blue-600 text-sm hover:text-blue-700"
+                    >
+                      Add
+                    </button>
+                  </div>
+                )}
+                {(!currentUser.professional?.skills || currentUser.professional.skills.length === 0) && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-700">Add your skills</span>
+                    <button 
+                      onClick={() => router.push('/dashboard/profile?tab=professional')}
+                      className="text-blue-600 text-sm hover:text-blue-700"
+                    >
+                      Add
+                    </button>
+                  </div>
+                )}
+                {!currentUser.professional?.description && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-700">Write a bio</span>
+                    <button 
+                      onClick={() => router.push('/dashboard/profile?tab=professional')}
+                      className="text-blue-600 text-sm hover:text-blue-700"
+                    >
+                      Add
+                    </button>
+                  </div>
+                )}
+                {!currentUser.pricing?.hourly_rate && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-700">Set your rates</span>
+                    <button 
+                      onClick={() => router.push('/dashboard/profile?tab=pricing')}
+                      className="text-blue-600 text-sm hover:text-blue-700"
+                    >
+                      Set
+                    </button>
+                  </div>
+                )}
+                {currentUser.verification?.verification_status !== 'verified' && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-700">Get verified</span>
+                    <button 
+                      onClick={() => router.push('/dashboard/profile?tab=verification')}
+                      className="text-blue-600 text-sm hover:text-blue-700"
+                    >
+                      Start
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
 
-            {/* Recommended Jobs */}
+            {/* Upcoming Bookings */}
             <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Recommended for You</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Upcoming Work</h3>
               <div className="space-y-4">
-                <div className="border border-gray-200 rounded-lg p-3">
-                  <h4 className="font-medium text-gray-900 text-sm mb-1">Electrical Installation</h4>
-                  <p className="text-xs text-gray-600 mb-2">GHS 800 - GHS 1,200 • Accra</p>
-                  <div className="flex items-center gap-2">
-                    <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">Electrical</span>
-                    <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs">95% match</span>
-                  </div>
-                </div>
-                <div className="border border-gray-200 rounded-lg p-3">
-                  <h4 className="font-medium text-gray-900 text-sm mb-1">Home Renovation</h4>
-                  <p className="text-xs text-gray-600 mb-2">GHS 2,000 - GHS 3,500 • Kumasi</p>
-                  <div className="flex items-center gap-2">
-                    <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">Construction</span>
-                    <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs">89% match</span>
-                  </div>
-                </div>
+                {bookings
+                  ?.filter(booking => 
+                    booking.status === 'active'
+                  )
+                  .slice(0, 2)
+                  .map((booking) => (
+                    <div key={booking.id} className="border border-gray-200 rounded-lg p-3">
+                      <h4 className="font-medium text-gray-900 text-sm mb-1">
+                        {booking.job?.title || 'Untitled Job'}
+                      </h4>
+                      <p className="text-xs text-gray-600 mb-2">
+                        {booking.start_date ? 
+                          new Date(booking.start_date).toLocaleDateString() : 
+                          'Date not set'
+                        }
+                      </p>
+                      <div className="flex items-center gap-2">
+                        <span className={`px-2 py-1 rounded text-xs ${
+                          booking.status === 'active' ? 
+                          'bg-green-100 text-green-800' : 
+                          booking.status === 'completed' ?
+                          'bg-blue-100 text-blue-800' :
+                          'bg-yellow-100 text-yellow-800'
+                        }`}>
+                          {booking.status}
+                        </span>
+                        <span className="text-xs text-gray-600">
+                          GHS {(booking.final_budget || booking.agreed_budget || 0)?.toLocaleString()}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                {(!bookings || bookings.filter(b => 
+                  b.status === 'active'
+                ).length === 0) && (
+                  <p className="text-sm text-gray-500 text-center py-4">
+                    No upcoming bookings
+                  </p>
+                )}
               </div>
               <button
-                onClick={() => router.push('/dashboard/jobs')}
+                onClick={() => router.push('/dashboard/jobs/bookings')}
                 className="w-full mt-4 text-blue-600 text-sm hover:text-blue-700 font-medium"
               >
-                View All Recommendations
+                View All Bookings
               </button>
             </div>
           </div>

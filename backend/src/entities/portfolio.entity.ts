@@ -89,11 +89,13 @@ export class PortfolioItem {
     before_after_images?: string[]; // URLs for before/after comparison
     challenges?: string[]; // Project challenges overcome
     solutions?: string[]; // Solutions implemented
-    testimonials?: string; // Client testimonial
   };
 
   @CreateDateColumn({ type: 'timestamptz' })
   created_at: Date;
+
+  @Column({ type: 'text', nullable: true })
+  testimonials: string;
 
   @UpdateDateColumn({ type: 'timestamptz' })
   updated_at: Date;

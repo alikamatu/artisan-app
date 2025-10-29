@@ -20,7 +20,7 @@ interface LoginResponse {
 // Create Auth Context
 interface AuthContextType {
   user: any;
-  register: (name: string, email: string, phone: string, password: string) => Promise<void>;
+  register: (email: string, password: string) => Promise<void>;
   login: (email: string, password: string, rememberMe: boolean) => Promise<void>;
   logout: () => void;
   forgotPassword: (email: string) => Promise<void>;
@@ -210,11 +210,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const register = async (name: string, phone: string, email: string, password: string) => {
+  const register = async (email: string, password: string) => {
     const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:1000'}/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, email, phone, password_hash: password }),
+      body: JSON.stringify({ email, password_hash: password }),
     });
 
     const data = await res.json();

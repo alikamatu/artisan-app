@@ -197,8 +197,6 @@ export class AuthService {
         email: user.email,
         role: user.role,
         is_verified: user.is_verified,
-        name: user.name,
-        phone: user.phone,
       },
     };
   }

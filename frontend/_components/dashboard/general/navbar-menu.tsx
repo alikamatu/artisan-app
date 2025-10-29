@@ -9,75 +9,100 @@ import {
   Briefcase, 
   MessageSquare, 
   User,
-  Settings,
-  Plus,
   Search,
-  Bell,
   FileText,
   Users,
   Calendar,
-  Wallet
+  Wallet,
+  Star,
+  LogOut
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAuth } from '@/context/AuthContext';
 
-const NavbarMenu = () => {
+const NavigationMenu: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const pathname = usePathname();
+  const { user, logout } = useAuth();
 
-  const navItems = [
-    { 
-      icon: Home, 
-      label: 'Dashboard', 
-      path: '/dashboard',
-      color: 'text-blue-500'
-    },
-    { 
-      icon: Briefcase, 
-      label: 'Browse Jobs', 
-      path: '/dashboard/jobs',
-      color: 'text-green-500'
-    },
-    { 
-      icon: Search, 
-      label: 'Find Workers', 
-      path: '/dashboard/find-workers',
-      color: 'text-orange-500'
-    },
-    { 
-      icon: MessageSquare, 
-      label: 'Messages', 
-      path: '/dashboard/messages',
-      color: 'text-pink-500'
-    },
-    { 
-      icon: Wallet, 
-      label: 'Payments', 
-      path: '/dashboard/payments',
-      color: 'text-emerald-500'
-    },
-    { 
-      icon: Calendar, 
-      label: 'Schedule', 
-      path: '/dashboard/schedule',
-      color: 'text-amber-500'
-    },
-    { 
-      icon: User, 
-      label: 'Profile', 
-      path: '/dashboard/profile',
-      color: 'text-gray-600'
-    },
-    { 
-      icon: Settings, 
-      label: 'Settings', 
-      path: '/dashboard/settings',
-      color: 'text-gray-500'
-    },
-  ];
+  const getNavItems = () => {
+    const baseItems = [
+      { 
+        icon: Home, 
+        label: 'Dashboard', 
+        path: '/dashboard',
+        color: 'text-blue-500',
+        description: 'Overview and analytics'
+      },
+      { 
+        icon: Briefcase, 
+        label: 'Browse Jobs', 
+        path: '/dashboard/jobs',
+        color: 'text-green-500',
+        description: 'Find work opportunities'
+      },
+      { 
+        icon: Search, 
+        label: 'Find Workers', 
+        path: '/dashboard/find-workers',
+        color: 'text-orange-500',
+        description: 'Hire professionals'
+      },
+      { 
+        icon: MessageSquare, 
+        label: 'Messages', 
+        path: '/dashboard/messages',
+        color: 'text-pink-500',
+        description: 'Chat and communications'
+      },
+      { 
+        icon: Wallet, 
+        label: 'Payments', 
+        path: '/dashboard/payments',
+        color: 'text-emerald-500',
+        description: 'Transactions and earnings'
+      },
+      { 
+        icon: Calendar, 
+        label: 'Schedule', 
+        path: '/dashboard/schedule',
+        color: 'text-amber-500',
+        description: 'Manage your calendar'
+      },
+    ];
 
-  // Close menu when clicking outside
+    if (user?.role === 'worker') {
+      baseItems.splice(2, 0, {
+        icon: FileText,
+        label: 'My Applications',
+        path: '/dashboard/applications',
+        color: 'text-purple-500',
+        description: 'Track your job applications'
+      });
+      baseItems.splice(3, 0, {
+        icon: Star,
+        label: 'My Reviews',
+        path: '/dashboard/reviews',
+        color: 'text-yellow-500',
+        description: 'Client feedback and ratings'
+      });
+    } else {
+      baseItems.splice(2, 0, {
+        icon: Users,
+        label: 'Applications',
+        path: '/dashboard/jobs/applications',
+        color: 'text-purple-500',
+        description: 'Manage job applications'
+      });
+    }
+
+    return baseItems;
+  };
+
+  const navItems = getNavItems();
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
@@ -89,7 +114,6 @@ const NavbarMenu = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Close menu when route changes
   useEffect(() => {
     setIsOpen(false);
   }, [pathname]);
@@ -102,7 +126,6 @@ const NavbarMenu = () => {
     setIsOpen(!isOpen);
   };
 
-  // Check if current path matches or is subpath
   const isActivePath = (itemPath: string) => {
     if (itemPath === '/dashboard') {
       return pathname === '/dashboard';
@@ -111,7 +134,7 @@ const NavbarMenu = () => {
   };
 
   return (
-    <div ref={menuRef} className="fixed bottom-6 right-6 z-50">
+    <div ref={menuRef} className="fixed bottom-6 right-6 z-40">
       {/* Main Menu Button */}
       <motion.button
         whileHover={{ scale: 1.1 }}
@@ -137,6 +160,15 @@ const NavbarMenu = () => {
             {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
           </motion.div>
         </AnimatePresence>
+
+        {/* Notification Badge */}
+        {!isOpen && (
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white"
+          />
+        )}
 
         {/* Pulsing animation when closed */}
         {!isOpen && (
@@ -184,17 +216,22 @@ const NavbarMenu = () => {
                       onClick={() => handleNavigation(item.path)}
                       className={`
                         w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm
-                        transition-all duration-200 ease-out
+                        transition-all duration-200 ease-out group
                         ${isActive 
                           ? 'bg-blue-50 text-blue-700 border border-blue-200 shadow-sm' 
                           : 'text-gray-600 hover:text-gray-900'
                         }
                       `}
                     >
-                      <div className={`p-2 rounded-lg ${isActive ? 'bg-white shadow-sm' : 'bg-gray-100'}`}>
+                      <div className={`p-2 rounded-lg transition-colors ${
+                        isActive ? 'bg-white shadow-sm' : 'bg-gray-100 group-hover:bg-gray-200'
+                      }`}>
                         <Icon className={`h-4 w-4 ${item.color}`} />
                       </div>
-                      <span className="font-medium flex-1 text-left">{item.label}</span>
+                      <div className="flex-1 text-left">
+                        <span className="font-medium block">{item.label}</span>
+                        <span className="text-xs text-gray-500">{item.description}</span>
+                      </div>
                       
                       {isActive && (
                         <motion.div
@@ -217,20 +254,20 @@ const NavbarMenu = () => {
                   <motion.button
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
-                    onClick={() => handleNavigation('/dashboard/jobs/create')}
-                    className="flex items-center justify-center gap-1.5 px-3 py-2 bg-blue-500 text-white rounded-xl text-xs font-semibold hover:bg-blue-600 transition-colors shadow-sm"
+                    onClick={logout}
+                    className="flex items-center justify-center gap-1.5 px-3 py-2 bg-red-500 text-white rounded-xl text-xs font-semibold hover:bg-red-600 transition-colors shadow-sm"
                   >
-                    <Plus className="h-3.5 w-3.5" />
-                    New Job
+                    <LogOut className="h-3.5 w-3.5" />
+                    Logout
                   </motion.button>
                   <motion.button
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
-                    onClick={() => handleNavigation('/dashboard/find-workers')}
+                    onClick={() => handleNavigation('/dashboard/profile')}
                     className="flex items-center justify-center gap-1.5 px-3 py-2 bg-green-500 text-white rounded-xl text-xs font-semibold hover:bg-green-600 transition-colors shadow-sm"
                   >
-                    <Search className="h-3.5 w-3.5" />
-                    Find Help
+                    <User className="h-3.5 w-3.5" />
+                    {user?.role === 'client' ? 'Find Help' : 'My Profile'}
                   </motion.button>
                 </div>
               </div>
@@ -251,21 +288,8 @@ const NavbarMenu = () => {
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* Backdrop */}
-      {/* <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/20 z-0"
-            onClick={() => setIsOpen(false)}
-          />
-        )}
-      </AnimatePresence> */}
     </div>
   );
 };
 
-export default NavbarMenu;
+export default NavigationMenu;

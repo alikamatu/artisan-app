@@ -26,19 +26,16 @@ export class JobApplication {
   @Column('uuid')
   worker_id: string;
 
-  @Column({ type: 'text' })
-  cover_letter: string;
-
   @Column({ type: 'decimal', precision: 10, scale: 2 })
   proposed_budget: number;
 
-  @Column({ type: 'text' })
+  @Column({ type: 'text', nullable: true })
   estimated_completion_time: string;
 
   @Column({ type: 'date', nullable: true })
   completion_date: Date | null;
 
-  @Column({ type: 'date' })
+  @Column({ type: 'date', nullable: true })
   availability_start_date: Date;
 
   @Column({

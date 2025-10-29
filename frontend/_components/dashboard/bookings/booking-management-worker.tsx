@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useCallback, useMemo } from 'react';
-import { Calendar, AlertTriangle } from 'lucide-react';
+import { Calendar } from 'lucide-react';
 import { useBookings, useBookingActions } from '@/lib/hooks/useBookings';
 import { useCreateReview } from '@/lib/hooks/useReviews';
 import { BookingManagementProps, BookingFilters, BookingStats } from '@/lib/types/booking-management.ts';
