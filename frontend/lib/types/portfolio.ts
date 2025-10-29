@@ -80,7 +80,7 @@ export interface CreatePortfolioDto {
   testimonials?: string;
 }
 
-export interface UpdatePortfolioDto extends Partial<CreatePortfolioDto> {}
+export type UpdatePortfolioDto = Partial<CreatePortfolioDto>;
 
 export interface PortfolioFilters {
   worker_id?: string;

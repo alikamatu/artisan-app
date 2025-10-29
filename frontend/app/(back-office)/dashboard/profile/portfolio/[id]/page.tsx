@@ -304,7 +304,7 @@ export default function PortfolioDetailPage() {
               <div className="bg-blue-50 rounded-lg  -blue-200 p-6">
                 <h3 className="font-semibold text-blue-900 mb-3">Client Testimonial</h3>
                 <blockquote className="text-blue-800 italic">
-                  "{portfolioItem.testimonials}"
+                  &quot;{portfolioItem.testimonials}&quot;
                 </blockquote>
                 {portfolioItem.client_name && (
                   <p className="text-blue-700 text-sm mt-3">— {portfolioItem.client_name}</p>
@@ -477,7 +477,7 @@ export default function PortfolioDetailPage() {
               Delete Portfolio Item
             </h3>
             <p className="text-gray-600 mb-6">
-              Are you sure you want to delete "{portfolioItem.title}"? This action cannot be undone.
+              Are you sure you want to delete &quot;{portfolioItem.title}&quot;? This action cannot be undone.
             </p>
             <div className="flex justify-end gap-3">
               <button
