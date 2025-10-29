@@ -1,5 +1,5 @@
 import React from 'react';
-import { Heart, Share2, MessageCircle, Bookmark, User } from 'lucide-react';
+import { Heart, User } from 'lucide-react';
 import { PortfolioItem } from '@/lib/types/portfolio';
 import { useAuth } from '@/context/AuthContext';
 import Link from 'next/link';
@@ -56,55 +56,6 @@ export function FeedItemActions({ item, onLike, isLiking }: FeedItemActionsProps
         </div>
         <span className="text-xs font-semibold">{item.likes_count}</span>
       </button>
-
-      {/* Comment Button */}
-      <button className={actionButtonClass}>
-        <div className={iconClass}>
-          <MessageCircle className="h-6 w-6" />
-        </div>
-        <span className="text-xs font-semibold">0</span>
-      </button>
-
-      {/* Share Button */}
-      <button
-        onClick={handleShare}
-        className={actionButtonClass}
-      >
-        <div className={iconClass}>
-          <Share2 className="h-6 w-6" />
-        </div>
-        <span className="text-xs font-semibold">Share</span>
-      </button>
-
-      {/* Save Button */}
-      <button className={actionButtonClass}>
-        <div className={iconClass}>
-          <Bookmark className="h-6 w-6" />
-        </div>
-        <span className="text-xs font-semibold">Save</span>
-      </button>
-
-      {/* Worker Profile */}
-      {item.worker && (
-        <Link 
-          href={`/profile/${item.worker.id}`}
-          className={actionButtonClass}
-        >
-          <div className={`${iconClass} p-0 overflow-hidden`}>
-            {item.worker.profile_photo ? (
-              <img
-                src={item.worker.profile_photo}
-                alt={item.worker.display_name || item.worker.name}
-                className="h-12 w-12 object-cover"
-              />
-            ) : (
-              <div className="h-12 w-12 bg-blue-600 flex items-center justify-center">
-                <User className="h-6 w-6 text-white" />
-              </div>
-            )}
-          </div>
-        </Link>
-      )}
     </div>
   );
 }
