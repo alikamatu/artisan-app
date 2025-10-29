@@ -169,7 +169,7 @@ export function MediaCarousel({
 
   if (!currentMedia) {
     return (
-      <div className="h-full w-full bg-black flex items-center justify-center text-gray-600">
+      <div className="h-full w-full bg-gray-100 flex items-center justify-center text-gray-600">
         No media available
       </div>
     );
@@ -178,7 +178,7 @@ export function MediaCarousel({
   return (
     <div 
       ref={containerRef}
-      className="h-full w-full relative bg-black flex items-center justify-center overflow-hidden touch-pan-y"
+      className="h-full w-full relative bg-gray-100 flex items-center justify-center overflow-hidden touch-pan-y"
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >
@@ -237,14 +237,20 @@ export function MediaCarousel({
         <>
           <button
             onClick={handlePreviousMedia}
-            className="absolute left-4 top-1/2 transform -translate-y-1/2 p-2 bg-black/50 text-white rounded-full hover:bg-black/70 transition-colors pointer-events-auto"
+            className={`absolute left-4 top-1/2 transform -translate-y-1/2 p-3 bg-white/90 text-gray-800 rounded-full hover:bg-white shadow-lg transition-all pointer-events-auto z-20 ${
+              currentMediaIndex === 0 ? 'opacity-50 cursor-not-allowed' : ''
+            }`}
+            disabled={currentMediaIndex === 0}
           >
             <ChevronLeft className="h-6 w-6" />
           </button>
           
           <button
             onClick={handleNextMedia}
-            className="absolute right-4 top-1/2 transform -translate-y-1/2 p-2 bg-black/50 text-white rounded-full hover:bg-black/70 transition-colors pointer-events-auto"
+            className={`absolute right-4 top-1/2 transform -translate-y-1/2 p-3 bg-white/90 text-gray-800 rounded-full hover:bg-white shadow-lg transition-all pointer-events-auto z-20 ${
+              currentMediaIndex === mediaUrls.length - 1 ? 'opacity-50 cursor-not-allowed' : ''
+            }`}
+            disabled={currentMediaIndex === mediaUrls.length - 1}
           >
             <ChevronRight className="h-6 w-6" />
           </button>
