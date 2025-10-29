@@ -2,14 +2,12 @@ import React from 'react';
 import { MapPin, Calendar, Clock, DollarSign, Tag } from 'lucide-react';
 import { PortfolioItem } from '@/lib/types/portfolio';
 import Link from 'next/link';
-import { useRouter } from 'next/router';
 
 interface FeedItemInfoProps {
   item: PortfolioItem;
 }
 
 export function FeedItemInfo({ item }: FeedItemInfoProps) {
-  const router = useRouter();
 
 
   const formatCategory = (category: string) => {
@@ -56,12 +54,12 @@ export function FeedItemInfo({ item }: FeedItemInfoProps) {
       )}
 
       {/* Title & Description */}
-      <div onClick={() => router.push(`dashboard/profile/portfolio/${item.id}`)} className="cursor-pointer">
+      <Link href={`/dashboard/profile/portfolio/${item.id}`}>
         <h2 className="font-bold text-xs mb-2">{item.title}</h2>
         <p className="text-gray-200 leading-relaxed line-clamp-3">
           {item.description}
         </p>
-      </div>
+      </Link>
 
       {/* Project Details */}
       <div className="flex flex-wrap gap-4 text-xs text-gray-300">
