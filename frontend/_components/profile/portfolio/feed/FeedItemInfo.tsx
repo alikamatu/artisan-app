@@ -22,64 +22,66 @@ export function FeedItemInfo({ item }: FeedItemInfoProps) {
   };
 
   return (
-    <div className="absolute bottom-0 text-white pointer-events-auto space-y-3 bg-black/25 rounded-2xl p-4 shadow-lg">
+    <div className="absolute bottom-0 left-0 right-0 text-white pointer-events-auto space-y-2 bg-gradient-to-t from-black/80 via-black/50 to-transparent p-3">
       {/* Worker Info */}
       {item.worker && (
         <Link 
           href={`/dashboard/profile/${item.worker.id}`}
-          className="flex items-center gap-3 hover:opacity-70 transition-opacity"
+          className="flex items-center gap-2 hover:opacity-80 transition-opacity mb-2"
         >
           {item.worker.profile_photo ? (
             <img
               src={item.worker.profile_photo}
               alt={item.worker.display_name || item.worker.name}
-              className="h-10 w-10 rounded-full object-cover ring-2 ring-gray-200"
+              className="h-8 w-8 rounded-full object-cover ring-2 ring-white/50"
             />
           ) : (
-            <div className="h-10 w-10 bg-blue-600 rounded-full flex items-center justify-center ring-2 ring-gray-200">
-              <span className="text-white font-semibold text-sm">
+            <div className="h-8 w-8 bg-blue-500 rounded-full flex items-center justify-center ring-2 ring-white/50">
+              <span className="text-white font-semibold text-xs">
                 {(item.worker.display_name || item.worker.name || 'U').charAt(0).toUpperCase()}
               </span>
             </div>
           )}
-          <div>
-            <h3 className="font-semibold text-base">
+          <div className="flex-1 min-w-0">
+            <h3 className="font-semibold text-sm truncate">
               {item.worker.display_name || item.worker.name}
             </h3>
-            <p className="text-gray-600 text-xs">Professional Worker</p>
+            <p className="text-white/70 text-xs">Professional Worker</p>
           </div>
         </Link>
       )}
 
       {/* Title & Description */}
-      <div>
-        <h2 className="font-bold text-lg mb-1">{item.title}</h2>
-        <p className="text-gray-700 text-sm leading-relaxed line-clamp-2">
-          {item.description}
-        </p>
+      <div className="space-y-1">
+        <h2 className="font-bold text-sm leading-tight">{item.title}</h2>
+        {item.description && (
+          <p className="text-white/90 text-xs leading-relaxed line-clamp-2">
+            {item.description}
+          </p>
+        )}
       </div>
 
       {/* Project Details */}
-      <div className="flex flex-wrap gap-3 text-xs text-gray-600">
+      <div className="flex flex-wrap gap-1.5">
         {/* Category */}
-        <div className="flex items-center gap-1 bg-gray-100 px-2 py-1 rounded-full">
-          <Tag className="h-3 w-3" />
-          <span>{formatCategory(item.category)}</span>
+        <div className="flex items-center gap-1 bg-white/20 backdrop-blur-sm px-2 py-1 rounded-full">
+          <Tag className="h-3 w-3 text-white" />
+          <span className="text-white text-xs">{formatCategory(item.category)}</span>
         </div>
 
         {/* Location */}
         {item.location && (
-          <div className="flex items-center gap-1 bg-gray-100 px-2 py-1 rounded-full">
-            <MapPin className="h-3 w-3" />
-            <span>{item.location}</span>
+          <div className="flex items-center gap-1 bg-white/20 backdrop-blur-sm px-2 py-1 rounded-full">
+            <MapPin className="h-3 w-3 text-white" />
+            <span className="text-white text-xs">{item.location}</span>
           </div>
         )}
 
         {/* Project Date */}
         {item.project_date && (
-          <div className="flex items-center gap-1 bg-gray-100 px-2 py-1 rounded-full">
-            <Calendar className="h-3 w-3" />
-            <span>
+          <div className="flex items-center gap-1 bg-white/20 backdrop-blur-sm px-2 py-1 rounded-full">
+            <Calendar className="h-3 w-3 text-white" />
+            <span className="text-white text-xs">
               {new Date(item.project_date).toLocaleDateString('en-US', {
                 month: 'short',
                 year: 'numeric'
@@ -90,34 +92,34 @@ export function FeedItemInfo({ item }: FeedItemInfoProps) {
 
         {/* Duration */}
         {item.duration && (
-          <div className="flex items-center gap-1 bg-gray-100 px-2 py-1 rounded-full">
-            <Clock className="h-3 w-3" />
-            <span>{item.duration}</span>
+          <div className="flex items-center gap-1 bg-white/20 backdrop-blur-sm px-2 py-1 rounded-full">
+            <Clock className="h-3 w-3 text-white" />
+            <span className="text-white text-xs">{item.duration}</span>
           </div>
         )}
 
         {/* Budget */}
         {item.project_budget > 0 && (
-          <div className="flex items-center gap-1 bg-gray-100 px-2 py-1 rounded-full">
-            <DollarSign className="h-3 w-3" />
-            <span>{formatCurrency(item.project_budget)}</span>
+          <div className="flex items-center gap-1 bg-white/20 backdrop-blur-sm px-2 py-1 rounded-full">
+            <DollarSign className="h-3 w-3 text-white" />
+            <span className="text-white text-xs">{formatCurrency(item.project_budget)}</span>
           </div>
         )}
       </div>
 
       {/* Tags */}
       {item.tags.length > 0 && (
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-1.5 pt-1">
           {item.tags.slice(0, 3).map((tag, index) => (
             <span
               key={index}
-              className="px-2 py-1 bg-blue-50 text-blue-700 text-xs rounded-full font-medium"
+              className="px-2 py-1 bg-white/20 backdrop-blur-sm text-white text-xs rounded-full font-medium"
             >
               #{tag}
             </span>
           ))}
           {item.tags.length > 3 && (
-            <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full font-medium">
+            <span className="px-2 py-1 bg-white/20 backdrop-blur-sm text-white text-xs rounded-full font-medium">
               +{item.tags.length - 3}
             </span>
           )}

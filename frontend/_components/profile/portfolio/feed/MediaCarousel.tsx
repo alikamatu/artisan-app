@@ -84,11 +84,6 @@ export function MediaCarousel({
     }
   }, [currentMediaIndex, onPrevious]);
 
-  // NEW: Handle single tap/click in middle zone to move to next media
-  const handleMiddleZoneTap = useCallback(() => {
-    handleNextMedia();
-  }, [handleNextMedia]);
-
   // NEW: Handle click/tap based on position
   const handlePositionBasedTap = useCallback((clientY: number) => {
     if (!containerRef.current) return;
@@ -111,9 +106,9 @@ export function MediaCarousel({
       onNext();
     } else {
       // Middle zone - Next media
-      handleMiddleZoneTap();
+      handleNextMedia();
     }
-  }, [onPrevious, onNext, handleMiddleZoneTap]);
+  }, [onPrevious, onNext, handleNextMedia]);
 
   const handleTap = useCallback((clientY?: number) => {
     const now = Date.now();
@@ -136,13 +131,13 @@ export function MediaCarousel({
         if (clientY !== undefined) {
           handlePositionBasedTap(clientY);
         } else {
-          handleMiddleZoneTap();
+          handleNextMedia();
         }
         setSingleTapTimeout(null);
       }, 300);
       setSingleTapTimeout(timeout);
     }
-  }, [lastTap, singleTapTimeout, handlePositionBasedTap, handleMiddleZoneTap, onDoubleTap]);
+  }, [lastTap, singleTapTimeout, handlePositionBasedTap, handleNextMedia, onDoubleTap]);
 
   const handleTouchStart = (e: React.TouchEvent) => {
     setTouchStart({
@@ -293,23 +288,13 @@ export function MediaCarousel({
       {/* NEW: Visual zone indicators (optional - for debugging/UX) */}
       <div className="absolute inset-0 pointer-events-none z-10">
         {/* Top zone - Previous post */}
-        <div className="absolute top-0 left-0 right-0 h-1/5 bg-blue-500/10 border-b border-blue-500/30 flex items-center justify-center">
-          <span className="text-blue-600 text-xs font-semibold bg-white/80 px-2 py-1 rounded-full">
-            ↑ Previous Post
+        <div className="absolute top-0 left-0 right-0 h-1/5 bg-transparent border-b border-transparent flex items-center justify-center">
+          <span className="text-transparent text-xs font-semibold bg-transparent px-2 py-1 rounded-full">
           </span>
         </div>
-        
-        {/* Middle zone - Next media */}
-        <div className="absolute top-1/5 left-0 right-0 h-3/5 flex items-center justify-center">
-          <span className="text-green-600 text-xs font-semibold bg-white/80 px-2 py-1 rounded-full">
-            Tap for Next Media
-          </span>
-        </div>
-        
         {/* Bottom zone - Next post */}
-        <div className="absolute bottom-0 left-0 right-0 h-1/5 bg-green-500/10 border-t border-green-500/30 flex items-center justify-center">
-          <span className="text-green-600 text-xs font-semibold bg-white/80 px-2 py-1 rounded-full">
-            ↓ Next Post
+        <div className="absolute bottom-0 left-0 right-0 h-4/5 bg-transparent border-t border-transparent flex items-center justify-center">
+          <span className="text-transparent text-xs font-semibold bg-transparent px-2 py-1 rounded-full">
           </span>
         </div>
       </div>
