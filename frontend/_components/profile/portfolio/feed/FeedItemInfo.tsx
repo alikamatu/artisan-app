@@ -26,7 +26,7 @@ export function FeedItemInfo({ item }: FeedItemInfoProps) {
       {/* Worker Info */}
       {item.worker && (
         <Link 
-          href={`/profile/${item.worker.id}`}
+          href={`/dashboard/profile/${item.worker.id}`}
           className="flex items-center gap-3 hover:opacity-70 transition-opacity"
         >
           {item.worker.profile_photo ? (

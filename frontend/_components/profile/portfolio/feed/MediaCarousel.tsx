@@ -27,6 +27,7 @@ export function MediaCarousel({
   const [touchStart, setTouchStart] = useState<{ x: number; y: number; time: number } | null>(null);
   const [lastTap, setLastTap] = useState(0);
   const [showLikeAnimation, setShowLikeAnimation] = useState(false);
+  const [singleTapTimeout, setSingleTapTimeout] = useState<NodeJS.Timeout | null>(null);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -83,6 +84,66 @@ export function MediaCarousel({
     }
   }, [currentMediaIndex, onPrevious]);
 
+  // NEW: Handle single tap/click in middle zone to move to next media
+  const handleMiddleZoneTap = useCallback(() => {
+    handleNextMedia();
+  }, [handleNextMedia]);
+
+  // NEW: Handle click/tap based on position
+  const handlePositionBasedTap = useCallback((clientY: number) => {
+    if (!containerRef.current) return;
+
+    const containerRect = containerRef.current.getBoundingClientRect();
+    const containerHeight = containerRect.height;
+    const relativeY = clientY - containerRect.top;
+    const percentageY = (relativeY / containerHeight) * 100;
+
+    // Define zones
+    const topZonePercentage = 20;    // Top 20% - Previous post
+    const bottomZonePercentage = 20; // Bottom 20% - Next post
+    const middleZonePercentage = 60; // Middle 60% - Next media
+
+    if (percentageY < topZonePercentage) {
+      // Top zone - Previous post
+      onPrevious();
+    } else if (percentageY > (100 - bottomZonePercentage)) {
+      // Bottom zone - Next post
+      onNext();
+    } else {
+      // Middle zone - Next media
+      handleMiddleZoneTap();
+    }
+  }, [onPrevious, onNext, handleMiddleZoneTap]);
+
+  const handleTap = useCallback((clientY?: number) => {
+    const now = Date.now();
+    const timeSinceLastTap = now - lastTap;
+
+    if (timeSinceLastTap < 300 && timeSinceLastTap > 0) {
+      // Double tap detected
+      if (singleTapTimeout) {
+        clearTimeout(singleTapTimeout);
+        setSingleTapTimeout(null);
+      }
+      setShowLikeAnimation(true);
+      setTimeout(() => setShowLikeAnimation(false), 600);
+      onDoubleTap();
+      setLastTap(0);
+    } else {
+      // Single tap - set timeout to handle after double tap window
+      setLastTap(now);
+      const timeout = setTimeout(() => {
+        if (clientY !== undefined) {
+          handlePositionBasedTap(clientY);
+        } else {
+          handleMiddleZoneTap();
+        }
+        setSingleTapTimeout(null);
+      }, 300);
+      setSingleTapTimeout(timeout);
+    }
+  }, [lastTap, singleTapTimeout, handlePositionBasedTap, handleMiddleZoneTap, onDoubleTap]);
+
   const handleTouchStart = (e: React.TouchEvent) => {
     setTouchStart({
       x: e.touches[0].clientX,
@@ -112,16 +173,7 @@ export function MediaCarousel({
     const isTap = Math.abs(distanceX) < 10 && Math.abs(distanceY) < 10 && timeDiff < 200;
     
     if (isTap) {
-      // Handle double tap
-      const now = Date.now();
-      if (now - lastTap < 300) {
-        setShowLikeAnimation(true);
-        setTimeout(() => setShowLikeAnimation(false), 600);
-        onDoubleTap();
-        setLastTap(0); // Reset after double tap
-      } else {
-        setLastTap(now);
-      }
+      handleTap(touchEnd.y);
       setTouchStart(null);
       return;
     }
@@ -154,6 +206,21 @@ export function MediaCarousel({
     setTouchStart(null);
   };
 
+  // NEW: Handle click for desktop users with position detection
+  const handleClick = (e: React.MouseEvent) => {
+    // Don't trigger if clicking on controls or navigation arrows
+    const target = e.target as HTMLElement;
+    if (
+      target.closest('button') || 
+      target.closest('.media-control') ||
+      target.closest('.navigation-arrow')
+    ) {
+      return;
+    }
+    
+    handleTap(e.clientY);
+  };
+
   const togglePlayback = (e: React.MouseEvent) => {
     e.stopPropagation();
     setIsPlaying(!isPlaying);
@@ -167,6 +234,15 @@ export function MediaCarousel({
     }
   };
 
+  // Clean up timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (singleTapTimeout) {
+        clearTimeout(singleTapTimeout);
+      }
+    };
+  }, [singleTapTimeout]);
+
   if (!currentMedia) {
     return (
       <div className="h-full w-full bg-gray-100 flex items-center justify-center text-gray-600">
@@ -178,9 +254,10 @@ export function MediaCarousel({
   return (
     <div 
       ref={containerRef}
-      className="h-full w-full relative bg-gray-100 flex items-center justify-center overflow-hidden touch-pan-y"
+      className="h-full w-full relative bg-gray-100 flex items-center justify-center overflow-hidden touch-pan-y cursor-pointer"
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
+      onClick={handleClick}
     >
       {/* Media Display - Centered and Responsive */}
       <div className="relative w-full h-full flex items-center justify-center">
@@ -213,9 +290,33 @@ export function MediaCarousel({
         )}
       </div>
 
+      {/* NEW: Visual zone indicators (optional - for debugging/UX) */}
+      <div className="absolute inset-0 pointer-events-none z-10">
+        {/* Top zone - Previous post */}
+        <div className="absolute top-0 left-0 right-0 h-1/5 bg-blue-500/10 border-b border-blue-500/30 flex items-center justify-center">
+          <span className="text-blue-600 text-xs font-semibold bg-white/80 px-2 py-1 rounded-full">
+            ↑ Previous Post
+          </span>
+        </div>
+        
+        {/* Middle zone - Next media */}
+        <div className="absolute top-1/5 left-0 right-0 h-3/5 flex items-center justify-center">
+          <span className="text-green-600 text-xs font-semibold bg-white/80 px-2 py-1 rounded-full">
+            Tap for Next Media
+          </span>
+        </div>
+        
+        {/* Bottom zone - Next post */}
+        <div className="absolute bottom-0 left-0 right-0 h-1/5 bg-green-500/10 border-t border-green-500/30 flex items-center justify-center">
+          <span className="text-green-600 text-xs font-semibold bg-white/80 px-2 py-1 rounded-full">
+            ↓ Next Post
+          </span>
+        </div>
+      </div>
+
       {/* Media Controls for Video */}
       {isVideo && (
-        <div className="absolute bottom-4 left-4 flex items-center gap-3 pointer-events-auto z-20">
+        <div className="media-control absolute bottom-4 left-4 flex items-center gap-3 pointer-events-auto z-20">
           <button
             onClick={togglePlayback}
             className="p-2 bg-white/90 text-gray-800 rounded-full hover:bg-white shadow-lg transition-colors"
@@ -237,7 +338,7 @@ export function MediaCarousel({
         <>
           <button
             onClick={handlePreviousMedia}
-            className={`absolute left-4 top-1/2 transform -translate-y-1/2 p-3 bg-white/90 text-gray-800 rounded-full hover:bg-white shadow-lg transition-all pointer-events-auto z-20 ${
+            className={`navigation-arrow absolute left-4 top-1/2 transform -translate-y-1/2 p-3 bg-white/90 text-gray-800 rounded-full hover:bg-white shadow-lg transition-all pointer-events-auto z-20 ${
               currentMediaIndex === 0 ? 'opacity-50 cursor-not-allowed' : ''
             }`}
             disabled={currentMediaIndex === 0}
@@ -247,7 +348,7 @@ export function MediaCarousel({
           
           <button
             onClick={handleNextMedia}
-            className={`absolute right-4 top-1/2 transform -translate-y-1/2 p-3 bg-white/90 text-gray-800 rounded-full hover:bg-white shadow-lg transition-all pointer-events-auto z-20 ${
+            className={`navigation-arrow absolute right-4 top-1/2 transform -translate-y-1/2 p-3 bg-white/90 text-gray-800 rounded-full hover:bg-white shadow-lg transition-all pointer-events-auto z-20 ${
               currentMediaIndex === mediaUrls.length - 1 ? 'opacity-50 cursor-not-allowed' : ''
             }`}
             disabled={currentMediaIndex === mediaUrls.length - 1}
