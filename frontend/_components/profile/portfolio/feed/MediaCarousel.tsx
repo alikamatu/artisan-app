@@ -95,8 +95,7 @@ export function MediaCarousel({
 
     // Define zones
     const topZonePercentage = 20;    // Top 20% - Previous post
-    const bottomZonePercentage = 20; // Bottom 20% - Next post
-    const middleZonePercentage = 60; // Middle 60% - Next media
+    const bottomZonePercentage = 80; // Bottom 20% - Next post
 
     if (percentageY < topZonePercentage) {
       // Top zone - Previous post

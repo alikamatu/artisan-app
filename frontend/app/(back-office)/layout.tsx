@@ -7,7 +7,7 @@ interface DashboardLayoutProps {
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   return (
     <div className="min-h-screen">
-      <main className="pb-20">
+      <main className="">
         {children}
       </main>
       
